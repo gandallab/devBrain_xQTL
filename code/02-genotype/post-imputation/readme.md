@@ -1,3 +1,4 @@
+#### Post-imputation QC
 - Scripts in `prep/`: inputs are imputed genotype files downloaded from server; concatenate by chromosomes, index, filter by R2, and take the **intersection** of high impute quality variants across datasets
 - Note: except for Walker data, we applied R2>.3 filter during imputation; so here we only applied R2>.3 on Walker imputed data and intersected with the other datasets
 - (Remove subjects that are not in rnaseq, reheader to match subject IDs)

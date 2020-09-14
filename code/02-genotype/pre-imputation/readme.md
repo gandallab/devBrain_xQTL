@@ -1,3 +1,4 @@
+#### Pre-imputation QC
 - Pre-imputation QC code, from starting data to files for imputation
 - First apply PLINK filters, and then split by chromosome and sort
 - Walker data is already filtered; we split the data by chromosome and imputed it
