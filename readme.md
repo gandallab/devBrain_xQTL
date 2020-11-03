@@ -2,6 +2,19 @@
 
 [Google Drive](https://drive.google.com/drive/u/1/folders/1-O4BE5-_3xmMhwoX_DKbSwi2hZw7DgGw)
 
+### Quantifications
+* Gene level 
+  * Estimated counts ("countsFromAbundance="lengthScaledTPM"): gene.noVersion.scaled.counts.tsv
+  * TPM: gene.noVersion.TPM.tsv
+* Isoform level
+  * Estimated counts ("countsFromAbundance="lengthScaledTPM"): tx.counts.scaled.tsv
+  * TPM: tx.TPM.tsv
+
+### Covariates
+* Compiled PicardTools QC metrics: picard_QC_compiled.tsv
+* Metadata with inferred sex: metadata_inferSex.tsv
+
+
 ### eQTL summary statistics 
 * Full Dataset
   * List of eGene from permutations and top eQTL per eGene: mixed_eqtl_permutation_90hcp_egenes_with_coord.txt
@@ -12,8 +25,8 @@
   * EUR: 
   * AFR
   * AMR
- 
- 
+
+
 ### isoQTL summary statistics
 * Full Dataset
   * List of isoTx from permutations and top isoQTL per isoTx: mixed_isoqtl_permutation_80hcp_isotx_with_coord.txt
@@ -32,3 +45,6 @@
   * EUR
   * AFR
   * AMR
+  
+  
+
