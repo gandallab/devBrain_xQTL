@@ -1,4 +1,4 @@
-# Fetal_metaQTL
+# Fetal brain mega QTL
 
 [Google Drive](https://drive.google.com/drive/u/1/folders/1-O4BE5-_3xmMhwoX_DKbSwi2hZw7DgGw)
 
@@ -9,6 +9,8 @@
 #### Isoform level
   * Estimated counts ("countsFromAbundance="lengthScaledTPM"): tx.counts.scaled.tsv
   * TPM: tx.TPM.tsv
+#### Splicing
+  *
 
 ### Covariates
 * Compiled PicardTools QC metrics: picard_QC_compiled.tsv
