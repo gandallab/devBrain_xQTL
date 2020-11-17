@@ -82,9 +82,12 @@
   * List of sQTL/intron from permutations and top sSNP per sQTL/intron: sqtl_mixed_permutations_40hcp_sqtl_with_coord.txt
   * List of all sQTL-sSNP pair from nominal pass: sqtl_mixed_nominals_40hcp_sqtl_ssnp_with_coord.txt
 #### Ancestry specific: 
-  * EUR
-  * AFR
-  * AMR
+  1. EUR
+  * List of all sQTL-sSNP pair from nominal pass: sqtl_eur_nominals_25hcp_sqtl_ssnp.txt (TODO: add hg19 coordinates?)
+  2. AFR
+  * List of all sQTL-sSNP pair from nominal pass: sqtl_amr_nominals_6hcp_sqtl_ssnp.txt (TODO: add hg19 coordinates?)
+  3. AMR
+  * List of all sQTL-sSNP pair from nominal pass: sqtl_afr_nominals_14hcp_sqtl_ssnp.txt (TODO: add hg19 coordinates?)
   
   
 
