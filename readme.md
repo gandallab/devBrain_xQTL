@@ -11,6 +11,8 @@
 #### Splicing (re-running STAR and Leafcutter)
 - [ ] Normalized intron excision ratios: 
 ### Genotype
+- [x] Mixed, EUR, AMR, AFR: QC-ed and imputed genotype data
+- [x] Mixed, EUR, AMR, AFR: genotype PCs
 ### Covariates
 - [x] Compiled PicardTools QC metrics: picard_QC_compiled.tsv
 - [x] Metadata with inferred sex: metadata_inferSex.tsv. 
@@ -70,8 +72,7 @@
 - [ ] List of top isoQTL per isoGene:  
 - [ ] List of isoGene from permutations with ENSG ID, gene name and gene type: 
 - [ ] List of all Tx-SNP pair from nominals pass: 
-### cis-sQTL 
-**Re-running STAR and Leafcutter**
+### cis-sQTL (Re-running STAR and Leafcutter)
 #### Mixed
 - [ ] List of sQTL/intron from permutations and top sSNP per sQTL/intron:
 - [ ] Full list of sQTL from permutations:
