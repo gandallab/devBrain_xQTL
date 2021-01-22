@@ -4,6 +4,7 @@
 - [x] Estimated counts ("countsFromAbundance="lengthScaledTPM"): gene.noVersion.scaled.counts.tsv
 - [x] TPM: gene.noVersion.TPM.tsv
 - [x] Filtered for expression, normalized, variance-stabilized, transformed, ComBat: gene.counts.scaled.normalized.bed.gz
+- [x] QTLtools BED file
 #### Isoform level
 - [x] Estimated counts ("countsFromAbundance="lengthScaledTPM"): tx.counts.scaled.tsv
 - [x] TPM: tx.TPM.tsv
@@ -13,14 +14,13 @@
 ### Genotype
 - [x] Mixed, EUR, AMR, AFR: QC-ed and imputed genotype data
 - [x] Mixed, EUR, AMR, AFR: genotype PCs
+- [x] Imputed, filtered for R2>.3, and intersection across studies: merge.reheader.vcf.gz
 ### Covariates
 - [x] Compiled PicardTools QC metrics: picard_QC_compiled.tsv
 - [x] Metadata with inferred sex: metadata_inferSex.tsv. 
 - [x] Mixed ancestry genotype PC: mixed.data.ref.eigenvec
-- [x] EUR geontype PC: eur.data.ref.eigenvec
-- [x] AMR geontype PC: amr.data.ref.eigenvec
-- [x] AFR geontype PC: afr.data.ref.eigenvec
-- [ ] Covariates files for QTL mapping
+- [x] EUR/AMR/AFR geontype PC: eur/amr/afr.data.ref.eigenvec
+- [x] Covariates files for QTL mapping: shared/EUR/AMR/AFR
 
 ***For all QTL summary statistics, please note: some variant ID are in hg38 chr:pos:REF:ALT format. Please use the last three columns for hg19 coordinates.***
 ### cis-eQTL 
