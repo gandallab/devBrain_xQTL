@@ -5,4 +5,13 @@
 - Compile FastQC and PicardTools metrics [MultiQC v1.9.dev0](https://github.com/ewels/MultiQC)
 - Quantification [Salmon v1.1.0](https://salmon.readthedocs.io/en/latest/); [GENCODE v33lift37](https://www.gencodegenes.org/) decoys-aware index
 - Compile and import quantifications [Tximport 1.14.0](https://bioconductor.org/packages/devel/bioc/vignettes/tximport/inst/doc/tximport.html)
+```
+txi <- tximport(files, type="salmon", tx2gene=tx2gene, dropInfReps=TRUE, countsFromAbundance="lengthScaledTPM")
+write.table(txi$counts,file="gene.noVersion.scaled.counts.tsv",quote=FALSE, sep='\t')
+write.table(txi$abundance,file="gene.noVersion.TPM.tsv",quote=FALSE, sep='\t')
+
+txi.tx <- tximport(files, type="salmon", txOut=TRUE, dropInfReps=TRUE, countsFromAbundance="lengthScaledTPM")
+write.table(txi.tx$counts,file="tx.counts.scaled.tsv",quote=FALSE, sep='\t')
+write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
+```
 - 
