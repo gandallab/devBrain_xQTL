@@ -1,0 +1,4 @@
+Building DAG of jobs...
+MissingInputException in line 227 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
+Missing input files(Using '~' in your paths is not allowed as such platform specific syntax is not resolved by Snakemake. In general, try sticking to relative paths for everything inside the working directory.) for rule crossmap:
+~/project-gandalm/isoform_twas/genotype/ref/GRCh38_to_GRCh37.chain.gz

@@ -1,0 +1,33 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cluster nodes: 50
+Job counts:
+	count	jobs
+	1	all
+	1	checkvcf
+	2
+
+[Sun Feb 28 10:43:22 2021]
+rule checkvcf:
+    input: /u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome_noCHR.fa, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.af, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.dup, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.geno, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.mono, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.nonSnp, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.ref
+    jobid: 24
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+[Sun Feb 28 11:43:46 2021]
+Error in rule checkvcf:
+    jobid: 24
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.af, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.dup, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.geno, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.mono, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.nonSnp, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.ref
+    shell:
+        
+        . /u/local/Modules/default/init/modules.sh
+        module load python/2.7.16
+        mkdir -p /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3//ancestry/checkVCF
+        python2 /u/home/c/cindywen/project-gandalm/isoform_twas/LIBD_data/scripts/checkVCF.py -r /u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome_noCHR.fa -o /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3//ancestry/checkVCF/filtered.hg19.sorted /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule checkvcf on cluster (jobid: 24, external: 20916, jobscript: /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/.snakemake/tmp.kp_6yxzx/snakejob.checkvcf.24.sh). For error details see the cluster log and the log files of the involved rule(s).
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/.snakemake/log/2021-02-28T104313.272742.snakemake.log

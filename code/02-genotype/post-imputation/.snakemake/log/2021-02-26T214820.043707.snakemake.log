@@ -1,0 +1,4 @@
+Building DAG of jobs...
+WildcardError in line 93 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
+Wildcards in input files cannot be determined from output files:
+'chr_num'

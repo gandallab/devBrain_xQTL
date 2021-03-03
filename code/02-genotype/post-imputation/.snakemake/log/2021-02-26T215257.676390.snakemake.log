@@ -1,0 +1,3 @@
+WildcardError in line 154 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
+No values given for wildcard 'wildcards'.
+  File "/u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile", line 154, in <module>

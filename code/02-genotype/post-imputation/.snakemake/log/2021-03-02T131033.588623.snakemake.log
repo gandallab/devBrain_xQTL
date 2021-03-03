@@ -1,0 +1,3 @@
+NameError in line 36 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
+name 'ancestry' is not defined
+  File "/u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile", line 36, in <module>

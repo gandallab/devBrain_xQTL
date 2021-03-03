@@ -1,0 +1,2 @@
+SyntaxError in line 704 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
+Unexpected keyword config in rule definition (Snakefile, line 704)

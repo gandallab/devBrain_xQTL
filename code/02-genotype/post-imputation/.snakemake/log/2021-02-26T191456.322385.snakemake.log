@@ -1,0 +1,12 @@
+Building DAG of jobs...
+AmbiguousRuleException:
+Rules convert_to_plink and keep_rsid_only are ambiguous for the file /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.bed.
+Consider starting rule output with a unique prefix, constrain your wildcards, or use the ruleorder directive.
+Wildcards:
+	convert_to_plink: chr_num=1_rsid_only
+	keep_rsid_only: chr_num=1
+Expected input files:
+	convert_to_plink: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.vcf.gz
+	keep_rsid_only: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid.bimExpected output files:
+	convert_to_plink: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.bed /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.bim /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.fam /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.log /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.nosex
+	keep_rsid_only: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_remaining_chrpos.txt /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.bed /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.bim /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.fam /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.log /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid_only.nosex

@@ -1,0 +1,82 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cluster nodes: 50
+Job counts:
+	count	jobs
+	1	add_chr
+	1	all
+	3	ancestry_remove_gene_expr_outlier
+	1	remove_gene_expr_outlier
+	6
+
+[Tue Mar  2 13:43:24 2021]
+rule ancestry_remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.vcf.gz.tbi
+    jobid: 32
+    wildcards: ancestry=eur
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+
+[Tue Mar  2 13:43:24 2021]
+rule ancestry_remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz.tbi
+    jobid: 34
+    wildcards: ancestry=afr
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+
+[Tue Mar  2 13:43:24 2021]
+rule remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz.tbi
+    jobid: 31
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+
+[Tue Mar  2 13:43:24 2021]
+rule ancestry_remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz.tbi
+    jobid: 33
+    wildcards: ancestry=amr
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+
+[Tue Mar  2 13:43:24 2021]
+rule add_chr:
+    input: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.withChr.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.withChr.vcf.gz.tbi
+    jobid: 35
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+[Tue Mar  2 13:47:15 2021]
+Finished job 33.
+1 of 6 steps (17%) done
+[Tue Mar  2 13:48:55 2021]
+Finished job 34.
+2 of 6 steps (33%) done
+[Tue Mar  2 13:49:35 2021]
+Finished job 32.
+3 of 6 steps (50%) done
+[Tue Mar  2 13:55:05 2021]
+Error in rule add_chr:
+    jobid: 35
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.withChr.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.withChr.vcf.gz.tbi
+    shell:
+        
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.9
+        zcat /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz | awk '{if($0 !~ /^#/) print "chr"$0; else print $0}' | bgzip -c > /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz.gz
+        tabix -p vcf /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz.gz
+        
+        (one of the commands exited with non-zero exit code; note that snakemake uses bash strict mode!)
+
+Error executing rule add_chr on cluster (jobid: 35, external: 9404, jobscript: /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/.snakemake/tmp.5zhn55b7/snakejob.add_chr.35.sh). For error details see the cluster log and the log files of the involved rule(s).
+[Tue Mar  2 13:59:56 2021]
+Finished job 31.
+4 of 6 steps (67%) done
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/.snakemake/log/2021-03-02T134322.010215.snakemake.log

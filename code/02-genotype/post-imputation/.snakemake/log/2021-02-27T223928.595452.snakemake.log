@@ -1,0 +1,30 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cluster nodes: 50
+Job counts:
+	count	jobs
+	1	all
+	1	vcf_to_plink
+	2
+
+[Sat Feb 27 22:39:31 2021]
+rule vcf_to_plink:
+    input: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.bed, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.bim, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.fam, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.nosex
+    jobid: 23
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+[Sat Feb 27 22:42:51 2021]
+Finished job 23.
+1 of 2 steps (50%) done
+
+[Sat Feb 27 22:42:51 2021]
+localrule all:
+    input: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr2_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr3_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr4_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr5_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr6_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr7_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr8_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr9_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr10_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr11_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr12_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr13_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr14_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr15_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr16_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr17_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr18_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr19_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr20_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr21_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr22_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.bed, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.bim, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.fam, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.nosex
+    jobid: 0
+    resources: mem_gb=4, time_min=240, num_cores=1
+
+[Sat Feb 27 22:42:51 2021]
+Finished job 0.
+2 of 2 steps (100%) done
+Complete log: /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/.snakemake/log/2021-02-27T223928.595452.snakemake.log

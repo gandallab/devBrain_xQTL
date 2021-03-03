@@ -1,0 +1,67 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cluster nodes: 50
+Job counts:
+	count	jobs
+	1	all
+	3	ancestry_remove_gene_expr_outlier
+	1	remove_gene_expr_outlier
+	5
+
+[Tue Mar  2 13:13:11 2021]
+rule ancestry_remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.vcf.gz
+    jobid: 32
+    wildcards: ancestry=eur
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+
+[Tue Mar  2 13:13:11 2021]
+rule ancestry_remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz
+    jobid: 34
+    wildcards: ancestry=afr
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+
+[Tue Mar  2 13:13:11 2021]
+rule remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz
+    jobid: 31
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+
+[Tue Mar  2 13:13:11 2021]
+rule ancestry_remove_gene_expr_outlier:
+    input: /u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/filtered.hg19.sorted.vcf.gz
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz
+    jobid: 33
+    wildcards: ancestry=amr
+    resources: mem_gb=4, time_min=60, num_cores=1
+
+[Tue Mar  2 13:16:51 2021]
+Finished job 33.
+1 of 5 steps (20%) done
+[Tue Mar  2 13:18:22 2021]
+Finished job 34.
+2 of 5 steps (40%) done
+[Tue Mar  2 13:20:22 2021]
+Finished job 32.
+3 of 5 steps (60%) done
+[Tue Mar  2 13:28:22 2021]
+Finished job 31.
+4 of 5 steps (80%) done
+
+[Tue Mar  2 13:28:23 2021]
+localrule all:
+    input: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr2_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr3_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr4_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr5_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr6_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr7_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr8_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr9_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr10_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr11_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr12_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr13_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr14_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr15_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr16_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr17_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr18_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr19_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr20_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr21_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr22_remaining_chrpos.txt, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.af, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.dup, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.geno, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.mono, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.nonSnp, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/checkVCF/filtered.hg19.sorted.check.ref, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/pca/data.ref.eigenvec, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/checkVCF/filtered.hg19.sorted.check.af, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/checkVCF/filtered.hg19.sorted.check.dup, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/checkVCF/filtered.hg19.sorted.check.geno, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/checkVCF/filtered.hg19.sorted.check.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/checkVCF/filtered.hg19.sorted.check.mono, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/checkVCF/filtered.hg19.sorted.check.nonSnp, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/checkVCF/filtered.hg19.sorted.check.ref, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/checkVCF/filtered.hg19.sorted.check.af, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/checkVCF/filtered.hg19.sorted.check.dup, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/checkVCF/filtered.hg19.sorted.check.geno, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/checkVCF/filtered.hg19.sorted.check.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/checkVCF/filtered.hg19.sorted.check.mono, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/checkVCF/filtered.hg19.sorted.check.nonSnp, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/checkVCF/filtered.hg19.sorted.check.ref, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/checkVCF/filtered.hg19.sorted.check.af, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/checkVCF/filtered.hg19.sorted.check.dup, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/checkVCF/filtered.hg19.sorted.check.geno, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/checkVCF/filtered.hg19.sorted.check.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/checkVCF/filtered.hg19.sorted.check.mono, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/checkVCF/filtered.hg19.sorted.check.nonSnp, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/checkVCF/filtered.hg19.sorted.check.ref, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/pca/data.ref.eigenvec, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/pca/data.ref.eigenvec, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/pca/data.ref.eigenvec, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/amr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/afr/filtered.hg19.sorted.removeGeneOutlier.vcf.gz
+    jobid: 0
+    resources: mem_gb=4, time_min=240, num_cores=1
+
+[Tue Mar  2 13:28:23 2021]
+Finished job 0.
+5 of 5 steps (100%) done
+Complete log: /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/.snakemake/log/2021-03-02T131306.898280.snakemake.log

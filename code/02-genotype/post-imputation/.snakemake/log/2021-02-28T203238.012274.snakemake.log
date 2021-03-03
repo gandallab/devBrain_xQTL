@@ -1,0 +1,22 @@
+Building DAG of jobs...
+Job counts:
+	count	jobs
+	1	all
+	66	variant_qc_ancestry
+	67
+
+[Sun Feb 28 20:32:39 2021]
+rule variant_qc_ancestry:
+    input: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid.bed, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid.bim, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid.fam, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/merge.reheader.chr1_rsid.nosex, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/ancestry_list/plink_eur.tsv
+    output: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.chr1.bed, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.chr1.bim, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.chr1.fam, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.chr1.log, /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.chr1.nosex
+    jobid: 25
+    wildcards: ancestry=eur, chr_num=1
+    resources: mem_gb=4, time_min=60
+
+RuleException in line 414 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
+IndexError: list index out of range
+  File "/u/local/apps/anaconda3/2019.03/envs/snakemake/lib/python3.8/site-packages/snakemake/executors/__init__.py", line 111, in run_jobs
+  File "/u/local/apps/anaconda3/2019.03/envs/snakemake/lib/python3.8/site-packages/snakemake/executors/__init__.py", line 120, in run
+  File "/u/local/apps/anaconda3/2019.03/envs/snakemake/lib/python3.8/site-packages/snakemake/executors/__init__.py", line 131, in _run
+  File "/u/local/apps/anaconda3/2019.03/envs/snakemake/lib/python3.8/site-packages/snakemake/executors/__init__.py", line 151, in printjob
+  File "/u/local/apps/anaconda3/2019.03/envs/snakemake/lib/python3.8/site-packages/snakemake/executors/__init__.py", line 137, in printjob

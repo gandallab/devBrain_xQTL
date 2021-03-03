@@ -1,0 +1,716 @@
+from os.path import join
+import os
+import numpy as np
+import pandas as pd
+import sys
+
+"""
+rules:
+    walker_subj: remove 4 walker subjects that are not in rnaseq
+    reheader: reheader to subject ID as in rnaseq; old_name new_name, same order as in original vcf file; or new_names for all samples, same order; can only output same format as input (BCF/VCF, bgzipped or not)
+    convert_to_plink, remove_allele_in_id, remove_dup_update_name: remove duplicate position variants (multi-allelic), and convert topmed variant IDs to rsID, keeping indels. Reference: /u/project/gandalm/shared/GenomicDatasets/ABCD_r201_r1/impute/imputeABCD_July2020/results/TOPMED_postimputation-master
+    keep_rsid_only: remove variants still in chr:pos:ref:alt ID. ~10% Topmed variants not mapped to rsID. Keeping these for analysis
+    variant_qc: filter variants
+    concat: concat chr plink files
+    plink_to_vcf: 
+    crossmap: hg38 to hg19
+    sort_tabix: 
+    vcf_to_plink: plink binary data will be used in ancestry PCA
+    checkvcf: sanity check
+    pca: merge data with 1000genomes and do PCA
+    call ancestry in ancestry.ipynb, and do the following rules for eur, amr, afr: variant_qc_ancestry, concat_ancestry, plink_to_vcf_ancestry, crossmap_ancestry, sort_tabix_ancestry, vcf_to_plink_ancestry, checkvcf_ancestry, pca_ancestry
+    remove_gene_expr_outlier and ancestry_remove_gene_expr_outlier: prepare genotype file for FastQTL
+    add_chr: for STAR 2nd pass 
+"""
+
+configfile: "config.yaml"
+ruleorder: convert_to_plink > remove_dup_update_name > keep_rsid_only > variant_qc 
+
+rule all:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}_remaining_chrpos.txt", chr_num=np.arange(1,23)),
+	expand(config["GENO_DIR"]+"ancestry/checkVCF/filtered.hg19.sorted.check.{suffix}", suffix=["af","dup","geno","log","mono","nonSnp", "ref"]),
+	config["GENO_DIR"]+"ancestry/pca/data.ref.eigenvec",
+	expand(config["GENO_DIR"]+"ancestry/{ancestry}/checkVCF/filtered.hg19.sorted.check.{suffix}", ancestry=["eur","amr","afr"], suffix=["af","dup","geno","log","mono","nonSnp","ref"]),
+	expand(config["GENO_DIR"]+"ancestry/{ancestry}/pca/data.ref.eigenvec", ancestry=["eur","amr","afr"]),
+	config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+	expand(config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.vcf.gz", ancestry=["eur","amr","afr"]),
+	expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.withChr.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+
+rule walker_subj:
+    input:
+        R2_3=config["GENO_DIR"]+"merge.vcf.gz",
+        subj=config["GENO_DIR"]+"ancestry/walker.remove.subj.txt"
+    output:
+        config["GENO_DIR"]+"ancestry/merge.654.vcf.gz"
+    resources:
+        mem_gb=4,
+        time_min=240
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        bcftools view -S ^{input.subj} {input.R2_3} -Oz -o {output[0]}
+        """
+
+rule reheader:
+    input:
+        vcf=config["GENO_DIR"]+"ancestry/merge.654.vcf.gz",
+        header=config["GENO_DIR"]+"ancestry/geno.reheader2.txt"
+    output:
+        config["GENO_DIR"]+"ancestry/merge.reheader.vcf.gz",
+        config["GENO_DIR"]+"ancestry/merge.reheader.vcf.gz.tbi"
+    resources:
+        mem_gb=4,
+        time_min=240
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        bcftools reheader -s {input.header} {input.vcf} -o {output[0]}
+        tabix -p vcf {output[0]}
+        """
+
+rule convert_to_plink:
+    input:
+        vcf=config["GENO_DIR"]+"ancestry/merge.reheader.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/merge.reheader.chr{{chr_num}}.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=240
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        plink --vcf {input.vcf} \
+              --chr {wildcards.chr_num} \
+              --make-bed \
+              --out {params.prefix}
+        """
+
+rule remove_allele_in_id:
+    input:
+        chr_file=config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}.bim"
+    output:
+        config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}.remove_allele_in_id.done"
+    resources:
+        mem_gb=4,
+        time_min=60
+    run:
+        bim = pd.read_csv(input.chr_file, sep='\t', header=None)
+        chr_bp = bim.iloc[:, 1].str.split(':', expand=True)
+        bim.iloc[:, 1] = (chr_bp.iloc[:, 0] + ':' + chr_bp.iloc[:, 1]).values
+        bim.to_csv(input.chr_file, sep='\t', header=None, index=False)
+        open(output[0], 'a').close()
+
+rule remove_dup_update_name:
+    input:
+        done_file=config["GENO_DIR"]+"ancestry/merge.reheader.chr{wildcards.chr_num}.remove_allele_in_id.done",
+        new_name=config["SNP_DIR"]+"AllChr_Sorted_Tabdelim.txt",
+        chr_file=config["GENO_DIR"]+"ancestry/merge.reheader.chr{wildcards.chr_num}.bim"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/merge.reheader.chr{{chr_num}}_{suffix}", suffix=["allsnps.snplist","allsnps.nosex","allsnps.log","duplicatedsnps.snplist","nodup.bed","nodup.bim","nodup.fam","nodup.log","nodup.nosex","rsid.bed","rsid.bim","rsid.fam","rsid.log","rsid.nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        # 1. create snp files
+        plink --bfile {params.prefix} \
+              --write-snplist \
+              --out {params.prefix}_allsnps
+
+        # 2. find duplicates
+        cat {params.prefix}_allsnps.snplist | sort | uniq -d > {params.prefix}_duplicatedsnps.snplist
+
+        # 3. Remove duplicates
+        plink --bfile {params.prefix} \
+              --exclude {params.prefix}_duplicatedsnps.snplist \
+              --make-bed \
+              --out {params.prefix}_nodup
+
+        # 4. Update name to rsID
+        plink --bfile {params.prefix}_nodup \
+              --update-name {input.new_name} \
+              --make-bed \
+              --out {params.prefix}_rsid
+        """
+
+rule keep_rsid_only:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/merge.reheader.chr{{chr_num}}_rsid.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    output:
+        config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}_remaining_chrpos.txt",
+        expand(config["GENO_DIR"]+"ancestry/merge.reheader.rsid.only.chr{{chr_num}}.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}_rsid",
+        out_prefix=config["GENO_DIR"]+"ancestry/merge.reheader.rsid.only.chr{chr_num}"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        cat {input[0]} | grep ":" > {output[0]}
+        plink --bfile {params.prefix} \
+              --exclude {output[0]} \
+              --make-bed \
+              --out {params.out_prefix}
+        """
+
+rule variant_qc:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/merge.reheader.chr{{chr_num}}_rsid.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    output:
+        expand(config["GENO_DIR"]+"ancestry/filtered.chr{{chr_num}}.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}_rsid",
+        out_prefix=config["GENO_DIR"]+"ancestry/filtered.chr{chr_num}"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        plink --bfile {params.prefix} \
+              --hwe 1e-6 \
+              --maf 0.01 \
+              --geno 0.05 \
+              --make-bed \
+              --out {params.out_prefix}
+        """
+
+rule concat:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/filtered.chr{chr_num}.{suffix}", suffix=["bed","bim","fam","log","nosex"], chr_num=np.arange(1,23))
+    output:
+        config["GENO_DIR"]+"ancestry/mergelist.txt",
+        expand(config["GENO_DIR"]+"ancestry/filtered.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/filtered"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        for i in {{1..22}}
+        do 
+        echo "{params.prefix}.chr${{i}}" >> {output[0]}
+        done
+	plink --merge-list {output[0]} \
+              --make-bed \
+              --out {params.prefix}
+        """
+
+rule plink_to_vcf:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/filtered.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    output:
+        expand(config["GENO_DIR"]+"ancestry/filtered.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/filtered"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        module load htslib/1.9
+	plink --bfile {params.prefix} \
+              --recode vcf-iid bgz \
+              --out {params.prefix}
+	tabix -p vcf {params.prefix}.vcf.gz
+        """
+
+# Program: CrossMap (v0.5.2)
+# ref="/u/home/c/cindywen/project-gandalm/isoform_twas/genotype/ref/hg19.fa"
+# chain_file="/u/home/c/cindywen/project-gandalm/isoform_twas/genotype/ref/hg38ToHg19.over.chain.gz"
+# Don't use these. Will get unspecified contigs. (gl_random...). Don't mix up GRChxxx files and hgxxx files
+rule crossmap:
+    input:
+        vcf=config["GENO_DIR"]+"ancestry/filtered.vcf.gz",
+        chain_file="/u/project/gandalm/cindywen/isoform_twas/genotype/ref/GRCh38_to_GRCh37.chain.gz",
+        ref="/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome.fa"
+    output: 
+        expand(config["GENO_DIR"]+"ancestry/filtered.hg19.vcf.{suffix}", suffix=["gz","unmap"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/filtered.hg19.vcf"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load python/3.7.0
+        module load htslib/1.9
+        python3 ~/.local/bin/CrossMap.py vcf {input.chain_file} {input.vcf} {input.ref} {params.prefix}
+        bgzip {params.prefix}
+        """
+
+# Unsorted after crossmap
+rule sort_tabix:
+    input:
+        config["GENO_DIR"]+"ancestry/filtered.hg19.vcf.gz"
+    output:
+        config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.vcf.gz",
+        config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.vcf.gz.tbi"
+    resources:
+        mem_gb=4,
+        time_min=60
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        bcftools sort {input[0]} -Oz -o {output[0]}
+        tabix -p vcf {output[0]}
+        """
+
+rule vcf_to_plink:
+    input:
+        config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/filtered.hg19.sorted"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        plink --vcf {input[0]} \
+              --make-bed \
+              --out {params.prefix}
+        """
+
+# version 1.4 (20140115)
+rule checkvcf:
+    input:
+        ref="/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome_noCHR.fa",
+        vcf=config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/checkVCF/filtered.hg19.sorted.check.{suffix}", suffix=["af","dup","geno","log","mono","nonSnp", "ref"])
+    resources:
+        mem_gb=4,
+        time_min=480
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load python/2.7.16
+        mkdir -p {config[GENO_DIR]}/ancestry/checkVCF
+        python2 {config[CHECK_VCF]} -r {input.ref} -o {config[GENO_DIR]}/ancestry/checkVCF/filtered.hg19.sorted {input.vcf}
+        """
+
+# https://meyer-lab-cshl.github.io/plinkQC/articles/AncestryCheck.html
+rule pca:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    output:
+        config["GENO_DIR"]+"ancestry/pca/data.ref.eigenvec"
+    resources:
+        mem_gb=4,
+        time_min=120
+    params:
+        data=config["GENO_DIR"]+"ancestry/filtered.hg19.sorted",
+        ref="/u/project/gandalm/shared/refGenomes/g1000/Phase3_ALL/ALL.autosomes.phase3",
+        outdir=config["GENO_DIR"]+"ancestry/pca"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        mkdir -p {params.outdir}
+        mkdir -p {params.outdir}/plink_log
+
+        # 0. In tutorial, but not doing: filter reference and study data for non A-T or G-C SNPs
+	
+	# 1. Prune study data. Filter for variants in LD with r^2>.2 in a 50kb window
+        plink --bfile {params.data} \
+              --indep-pairwise 50 5 0.2 \
+              --out {params.outdir}/data
+
+        plink --bfile {params.data} \
+              --extract {params.outdir}/data.prune.in \
+              --make-bed \
+              --out {params.outdir}/data.pruned
+	
+	# 2. Filter reference data for the same SNP set as in study. Reduce reference to the same size
+        plink --bfile {params.ref} \
+              --extract {params.outdir}/data.prune.in \
+              --make-bed \
+              --out {params.outdir}/ref.pruned
+        
+        # 3. Check and correct chromosome mismatch. Check that the variant IDs of the reference data have the same chromosome ID as the study data, update the pruned reference dataset
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$2]=$1; next}} \
+        ($2 in a && a[$2] != $1) {{print a[$2],$2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.pruned.bim | \
+        sed -n '/^[XY]/!p' > {params.outdir}/ref.toUpdateChr
+        
+        # Correct chromosome mismatch
+        plink --bfile {params.outdir}/ref.pruned \
+              --update-chr {params.outdir}/ref.toUpdateChr 1 2 \
+              --make-bed \
+              --out {params.outdir}/ref.updateChr
+        
+        # 4. Check and correct position mismatch
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$2]=$4; next}} \
+        ($2 in a && a[$2] != $4) {{print a[$2],$2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.pruned.bim > \
+        {params.outdir}/ref.toUpdatePos
+
+        # Possible allele flips
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$1$2$4]=$5$6; next}} \
+        ($1$2$4 in a && a[$1$2$4] != $5$6 && a[$1$2$4] != $6$5) {{print $2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.pruned.bim > \
+        {params.outdir}/ref.toFlip
+
+        # Update position and allele flips
+        plink --bfile {params.outdir}/ref.updateChr \
+              --update-map {params.outdir}/ref.toUpdatePos 1 2 \
+              --flip {params.outdir}/ref.toFlip \
+              --make-bed \
+              --out {params.outdir}/ref.flipped
+        
+        # 5. Remove mismatches in ref. Any alleles not matching after allele flipping are identified and removed from the reference
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$1$2$4]=$5$6; next}} \
+        ($1$2$4 in a && a[$1$2$4] != $5$6 && a[$1$2$4] != $6$5) {{print $2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.flipped.bim > \
+        {params.outdir}/ref.mismatch
+
+        plink --bfile {params.outdir}/ref.flipped \
+              --exclude {params.outdir}/ref.mismatch \
+              --make-bed \
+              --out {params.outdir}/ref.clean
+
+        # 6. Merge study genotypes and ref
+        plink --bfile {params.outdir}/data.pruned \
+              --bmerge {params.outdir}/ref.clean.bed \
+              {params.outdir}/ref.clean.bim \
+              {params.outdir}/ref.clean.fam \
+              --make-bed \
+              --out {params.outdir}/data.merge.ref
+        
+        # 7. PCA on the merged data
+        plink --bfile {params.outdir}/data.merge.ref \
+              --pca \
+              --out {params.outdir}/data.ref
+        
+        mv {params.outdir}/*.log {params.outdir}/plink_log
+        """
+
+# Now call ancestry and make plots in ancestry.ipynb
+
+#################
+##   Ancestry  ##
+#################
+rule variant_qc_ancestry:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/merge.reheader.chr{{chr_num}}_rsid.{suffix}", suffix=["bed","bim","fam","log","nosex"]),
+        config["GENO_DIR"]+"ancestry/ancestry_list/plink_{ancestry}.tsv"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.chr{{chr_num}}.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/merge.reheader.chr{chr_num}_rsid",
+        out_prefix=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.chr{chr_num}",
+	outdir=config["GENO_DIR"]+"ancestry/{ancestry}"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+	mkdir -p {params.outdir}
+        plink --bfile {params.prefix} \
+              --keep {input[5]} \
+              --hwe 1e-6 \
+              --maf 0.01 \
+              --geno 0.05 \
+              --make-bed \
+              --out {params.out_prefix}
+        """
+
+rule concat_ancestry:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.chr{chr_num}.{suffix}", suffix=["bed","bim","fam","log","nosex"], chr_num=np.arange(1,23))
+    output:
+        config["GENO_DIR"]+"ancestry/{ancestry}/mergelist.txt",
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/{ancestry}/filtered"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        for i in {{1..22}}
+        do
+        echo "{params.prefix}.chr${{i}}" >> {output[0]}
+        done
+	    plink --merge-list {output[0]} \
+                  --make-bed \
+                  --out {params.prefix}
+        """
+
+rule plink_to_vcf_ancestry:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    output:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/{ancestry}/filtered"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        module load htslib/1.9
+	    plink --bfile {params.prefix} \
+              	  --recode vcf-iid bgz \
+              	  --out {params.prefix}
+	    tabix -p vcf {params.prefix}.vcf.gz
+        """
+
+rule crossmap_ancestry:
+    input:
+        vcf=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.vcf.gz",
+        chain_file="/u/project/gandalm/cindywen/isoform_twas/genotype/ref/GRCh38_to_GRCh37.chain.gz",
+        ref="/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome.fa"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.hg19.vcf.{suffix}", suffix=["gz","unmap"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.vcf"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load python/3.7.0
+        module load htslib/1.9
+        python3 ~/.local/bin/CrossMap.py vcf {input.chain_file} {input.vcf} {input.ref} {params.prefix}
+        bgzip {params.prefix}
+        """
+
+rule sort_tabix_ancestry:
+    input:
+        config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.vcf.gz"
+    output:
+        config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.vcf.gz",
+        config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.vcf.gz.tbi"
+    resources:
+        mem_gb=4,
+        time_min=60
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        bcftools sort {input[0]} -Oz -o {output[0]}
+        tabix -p vcf {output[0]}
+        """
+
+rule vcf_to_plink_ancestry:
+    input:
+        config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.hg19.sorted.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        prefix=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        plink --vcf {input[0]} \
+              --make-bed \
+              --out {params.prefix}
+        """
+
+rule checkvcf_ancestry:
+    input:
+        ref="/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome_noCHR.fa",
+        vcf=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/checkVCF/filtered.hg19.sorted.check.{suffix}", suffix=["af","dup","geno","log","mono","nonSnp", "ref"])
+    resources:
+        mem_gb=4,
+        time_min=480
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load python/2.7.16
+        mkdir -p {config[GENO_DIR]}/ancestry/{wildcards.ancestry}/checkVCF
+        python2 {config[CHECK_VCF]} -r {input.ref} -o {config[GENO_DIR]}/ancestry/{wildcards.ancestry}/checkVCF/filtered.hg19.sorted {input.vcf}
+        """
+
+rule pca_ancestry:
+    input:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.hg19.sorted.{suffix}", suffix=["bed","bim","fam","log","nosex"])
+    output:
+        config["GENO_DIR"]+"ancestry/{ancestry}/pca/data.ref.eigenvec"
+    resources:
+        mem_gb=4,
+        time_min=120
+    params:
+        data=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted",
+        ref="/u/project/gandalm/shared/refGenomes/g1000/Phase3_ALL/ALL.autosomes.phase3",
+        outdir=config["GENO_DIR"]+"ancestry/{ancestry}/pca"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        mkdir -p {params.outdir}
+        mkdir -p {params.outdir}/plink_log
+
+        # 0. In tutorial, but not doing: filter reference and study data for non A-T or G-C SNPs
+
+	    # 1. Prune study data. Filter for variants in LD with r^2>.2 in a 50kb window
+        plink --bfile {params.data} \
+              --indep-pairwise 50 5 0.2 \
+              --out {params.outdir}/data
+
+        plink --bfile {params.data} \
+              --extract {params.outdir}/data.prune.in \
+              --make-bed \
+              --out {params.outdir}/data.pruned
+
+	    # 2. Filter reference data for the same SNP set as in study. Reduce reference to the same size
+        plink --bfile {params.ref} \
+              --extract {params.outdir}/data.prune.in \
+              --make-bed \
+              --out {params.outdir}/ref.pruned
+
+        # 3. Check and correct chromosome mismatch. Check that the variant IDs of the reference data have the same chromosome ID as the study data, update the pruned reference dataset
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$2]=$1; next}} \
+        ($2 in a && a[$2] != $1) {{print a[$2],$2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.pruned.bim | \
+        sed -n '/^[XY]/!p' > {params.outdir}/ref.toUpdateChr
+
+        # Correct chromosome mismatch
+        plink --bfile {params.outdir}/ref.pruned \
+              --update-chr {params.outdir}/ref.toUpdateChr 1 2 \
+              --make-bed \
+              --out {params.outdir}/ref.updateChr
+
+        # 4. Check and correct position mismatch
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$2]=$4; next}} \
+        ($2 in a && a[$2] != $4) {{print a[$2],$2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.pruned.bim > \
+        {params.outdir}/ref.toUpdatePos
+
+        # Possible allele flips
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$1$2$4]=$5$6; next}} \
+        ($1$2$4 in a && a[$1$2$4] != $5$6 && a[$1$2$4] != $6$5) {{print $2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.pruned.bim > \
+        {params.outdir}/ref.toFlip
+
+        # Update position and allele flips
+        plink --bfile {params.outdir}/ref.updateChr \
+              --update-map {params.outdir}/ref.toUpdatePos 1 2 \
+              --flip {params.outdir}/ref.toFlip \
+              --make-bed \
+              --out {params.outdir}/ref.flipped
+
+        # 5. Remove mismatches in ref. Any alleles not matching after allele flipping are identified and removed from the reference
+        awk 'BEGIN {{OFS="\t"}} FNR==NR {{a[$1$2$4]=$5$6; next}} \
+        ($1$2$4 in a && a[$1$2$4] != $5$6 && a[$1$2$4] != $6$5) {{print $2}}' \
+        {params.outdir}/data.pruned.bim {params.outdir}/ref.flipped.bim > \
+        {params.outdir}/ref.mismatch
+
+        plink --bfile {params.outdir}/ref.flipped \
+              --exclude {params.outdir}/ref.mismatch \
+              --make-bed \
+              --out {params.outdir}/ref.clean
+
+        # 6. Merge study genotypes and ref
+        plink --bfile {params.outdir}/data.pruned \
+              --bmerge {params.outdir}/ref.clean.bed \
+              {params.outdir}/ref.clean.bim \
+              {params.outdir}/ref.clean.fam \
+              --make-bed \
+              --out {params.outdir}/data.merge.ref
+
+        # 7. PCA on the merged data
+        plink --bfile {params.outdir}/data.merge.ref \
+              --pca \
+              --out {params.outdir}/data.ref
+
+        mv {params.outdir}/*.log {params.outdir}/plink_log
+        """
+
+##################
+## Ancestry End ##
+##################
+rule remove_gene_expr_outlier:
+    input:
+        outlier_list="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt", 
+        vcf=config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.removeGeneOutlier.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        bcftools view -S ^{input.outlier_list} --force-samples -Oz -o {output[0]} {input.vcf}
+	tabix -p vcf {output[0]}
+        """
+
+rule ancestry_remove_gene_expr_outlier:
+    input:
+        outlier_list="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt", 
+        vcf=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.hg19.sorted.removeGeneOutlier.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        bcftools view -S ^{input.outlier_list} --force-samples -Oz -o {output[0]} {input.vcf}
+	tabix -p vcf {output[0]}
+        """
+
+# For STAR 2nd pass
+rule add_chr:
+    input:
+        config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.withChr.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.9
+        zcat {input[0]} | awk '{{if($0 !~ /^#/) print "chr"$0; else print $0}}' | bgzip -c > {output[0]}
+        tabix -p vcf {output[0]}
+        """

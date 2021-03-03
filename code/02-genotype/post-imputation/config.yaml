@@ -1,0 +1,5 @@
+# path
+GENO_DIR: "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/"
+SNP_DIR: "/u/project/gandalm/shared/GenomicDatasets/ABCD_r201_r1/impute/imputeABCD_July2020/results/TOPMED_postimputation-master/snp_dir/" #this is hg38
+CHECK_VCF: "/u/home/c/cindywen/project-gandalm/isoform_twas/LIBD_data/scripts/checkVCF.py"
+
