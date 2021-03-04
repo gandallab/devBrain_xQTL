@@ -20,6 +20,7 @@ rules:
     pca: merge data with 1000genomes and do PCA
     call ancestry in ancestry.ipynb, and do the following rules for eur, amr, afr: variant_qc_ancestry, concat_ancestry, plink_to_vcf_ancestry, crossmap_ancestry, sort_tabix_ancestry, vcf_to_plink_ancestry, checkvcf_ancestry, pca_ancestry
     remove_gene_expr_outlier and ancestry_remove_gene_expr_outlier: prepare genotype file for FastQTL
+    remove_tx_expr_outlier and ancestry_remove_tx_expr_outlier: prepare genotype file for FastQTL
     add_chr: for STAR 2nd pass 
 """
 
@@ -35,7 +36,9 @@ rule all:
 	expand(config["GENO_DIR"]+"ancestry/{ancestry}/pca/data.ref.eigenvec", ancestry=["eur","amr","afr"]),
 	config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
 	expand(config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.vcf.gz", ancestry=["eur","amr","afr"]),
-	expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.withChr.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+	expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.withChr.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"]),
+        config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.removeTxOutlier.vcf.gz",
+	expand(config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.removeTxOutlier.vcf.gz", ancestry=["eur","amr","afr"]),
 
 rule walker_subj:
     input:
@@ -662,6 +665,7 @@ rule pca_ancestry:
 ##################
 ## Ancestry End ##
 ##################
+
 rule remove_gene_expr_outlier:
     input:
         outlier_list="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.outlier.txt", 
@@ -686,6 +690,42 @@ rule ancestry_remove_gene_expr_outlier:
         vcf=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.vcf.gz"
     output:
         expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.hg19.sorted.removeGeneOutlier.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        bcftools view -S ^{input.outlier_list} --force-samples -Oz -o {output[0]} {input.vcf}
+	tabix -p vcf {output[0]}
+        """
+
+rule remove_tx_expr_outlier:
+    input:
+        outlier_list="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx.outlier.txt", 
+        vcf=config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/filtered.hg19.sorted.removeTxOutlier.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
+    resources:
+        mem_gb=4,
+        time_min=60
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        bcftools view -S ^{input.outlier_list} --force-samples -Oz -o {output[0]} {input.vcf}
+	tabix -p vcf {output[0]}
+        """
+
+rule ancestry_remove_tx_expr_outlier:
+    input:
+        outlier_list="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx.outlier.txt", 
+        vcf=config["GENO_DIR"]+"ancestry/{ancestry}/filtered.hg19.sorted.vcf.gz"
+    output:
+        expand(config["GENO_DIR"]+"ancestry/{{ancestry}}/filtered.hg19.sorted.removeTxOutlier.{suffix}", suffix=["vcf.gz","vcf.gz.tbi"])
     resources:
         mem_gb=4,
         time_min=60

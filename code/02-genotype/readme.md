@@ -8,7 +8,7 @@
 ### Post-imputation
 - Scripts in `prelim/`: inputs are imputed genotype files downloaded from Michigan Imputation server; concatenate by chromosomes, index, filter by R2, and take the **intersection** of high impute quality variants across datasets
 - Note: except for Walker data, we applied R2>.3 filter during imputation; so here we only applied R2>.3 on Walker imputed data and intersected with the other datasets
-- See Snakefile rule descriptions:
+- Snakefile rules description:
 ```
 rules:
     walker_subj: remove 4 walker subjects that are not in rnaseq
@@ -25,5 +25,7 @@ rules:
     pca: merge data with 1000genomes and do PCA
     call ancestry in ancestry.ipynb, and do the following rules for eur, amr, afr: variant_qc_ancestry, concat_ancestry, plink_to_vcf_ancestry, crossmap_ancestry, sort_tabix_ancestry, vcf_to_plink_ancestry, checkvcf_ancestry, pca_ancestry
     remove_gene_expr_outlier and ancestry_remove_gene_expr_outlier: prepare genotype file for FastQTL
+    remove_tx_expr_outlier and ancestry_remove_tx_expr_outlier: prepare genotype file for FastQTL
     add_chr: for STAR 2nd pass
 ```
+- ancestry.ipynb: infer data ancestry, make plots
