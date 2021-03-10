@@ -1,0 +1,15 @@
+Walker in rna not in dna
+1504
+1684
+1745
+1753
+1928
+1989
+2112
+2114
+
+walker in dna not in rna
+1560
+1689
+1943
+2094
