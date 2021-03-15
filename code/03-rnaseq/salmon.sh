@@ -12,4 +12,15 @@ IN_FASTQS_R2=${params[2]}
 SAMPLE_PATH=${SAMPLE_ID}
 mkdir -p ${SAMPLE_PATH}
 
-./salmon-latest_linux_x86_64/bin/salmon quant -i ${SALMON_INDEX} -l A -1 ${IN_FASTQS_R1} -2 ${IN_FASTQS_R2} --validateMappings --useEM --numBootstraps 50 --seqBias --gcBias -p 12 -o ${SAMPLE_PATH} 
+./salmon-latest_linux_x86_64/bin/salmon quant \
+                                -i ${SALMON_INDEX} \
+                                -l A \
+                                -1 ${IN_FASTQS_R1} \
+                                -2 ${IN_FASTQS_R2} \
+                                --validateMappings \
+                                --useEM \
+                                --numBootstraps 50 \
+                                --seqBias \
+                                --gcBias \
+                                -p 12 \
+                                -o ${SAMPLE_PATH} 

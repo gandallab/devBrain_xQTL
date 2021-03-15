@@ -4,7 +4,7 @@
 module load samtools
 
 STAR_INDEX=/u/project/gandalm/pampas/refGenomes/GRCh37/STARindex/
-INPUT_FILE=./sample_list_hdbrOnly.txt
+INPUT_FILE=$1
 GTF_PATH=/u/project/gandalm/pampas/refGenomes/GRCh37/gencode.v29lift37.annotation.gtf
 
 INLINE=`head -n ${SGE_TASK_ID} ${INPUT_FILE} | tail -n 1`
@@ -22,7 +22,28 @@ mkdir -p ${SAMPLEPATH}
 # --limitSjdbInsertNsj 100000000 --limitBAMsortRAM 40000000000
 # --sjdbGTFfile $GTF_PATH: include annotations on the fly at the mapping step, without including them at the genome generation step; not necessary here, as index was built with annotation.gtf
 # --quantMode TranscriptomeSAM: default -; if given, in addition to genome alignments (Aligned.*.sam/bam), will output transcriptome coordinates alignments (Aligned.toTranscriptome.out.bam); can be used in quantifications like RSEM, we don't really need it here
-./STAR-2.7.3a/bin/Linux_x86_64_static/STAR --genomeDir $STAR_INDEX --runThreadN 6 --readFilesIn $IN_FASTQS_R1 $IN_FASTQS_R2 --twopassMode Basic --sjdbGTFfile $GTF_PATH --readFilesCommand gunzip -c --outFilterMultimapNmax 20 --outSAMattributes NH HI AS NM MD nM --outSAMtype BAM SortedByCoordinate --alignSJoverhangMin 8 --alignSJDBoverhangMin 1 --outFilterMismatchNmax 999 --alignIntronMin 20 --alignIntronMax 1000000 --alignMatesGapMax 1000000 --outSAMunmapped Within --outFilterMismatchNoverReadLmax 0.04 --sjdbScore 1 --quantMode TranscriptomeSAM --limitSjdbInsertNsj 100000000 --outFileNamePrefix $SAMPLEPATH/$SAMPLE_ID.STAR
+./STAR-2.7.3a/bin/Linux_x86_64_static/STAR \
+                    --genomeDir $STAR_INDEX \
+                    --runThreadN 6 \
+                    --readFilesIn $IN_FASTQS_R1 $IN_FASTQS_R2 \
+                    --twopassMode Basic \
+                    --sjdbGTFfile $GTF_PATH \
+                    --readFilesCommand gunzip -c \
+                    --outFilterMultimapNmax 20 \
+                    --outSAMattributes NH HI AS NM MD nM \
+                    --outSAMtype BAM SortedByCoordinate \
+                    --alignSJoverhangMin 8 \
+                    --alignSJDBoverhangMin 1 \
+                    --outFilterMismatchNmax 999 \
+                    --alignIntronMin 20 \
+                    --alignIntronMax 1000000 \
+                    --alignMatesGapMax 1000000 \
+                    --outSAMunmapped Within \
+                    --outFilterMismatchNoverReadLmax 0.04 \
+                    --sjdbScore 1 \
+                    --quantMode TranscriptomeSAM \
+                    --limitSjdbInsertNsj 100000000 \
+                    --outFileNamePrefix $SAMPLEPATH/$SAMPLE_ID.STAR
 
 # Sort transcriptome coordinates alignments
 mv $SAMPLEPATH/$SAMPLE_ID.STARAligned.toTranscriptome.out.bam $SAMPLEPATH/Tr.bam

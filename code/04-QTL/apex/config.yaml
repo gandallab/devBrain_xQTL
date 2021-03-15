@@ -1,0 +1,7 @@
+# tools
+APEX: "/u/project/gandalm/shared/apps/apex/bin/apex"
+GCTA: "/u/project/gandalm/shared/apps/gcta_1.93.0beta/gcta64"
+KING_PATH: "/u/project/gandalm/shared/apps/" # Please note this is king/2.2, I was unable to compile the latest version, had problem with glibc version
+
+# parameters
+N_SAMPLE_BLOCKS: 3 # This is for rule pcrelate; parameter needed in rule all so put here
