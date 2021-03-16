@@ -14,7 +14,7 @@
 ### Genotype (working/geno/)
 - [x] Mixed, EUR, AMR, AFR: QC-ed and imputed genotype data
 - [x] Imputed, filtered for R2>.3, intersection across studies, exlcude duplicates, map to rsID (still in hg38): merge.reheader.chr*_rsid
-*** Please note some TOPMED variants are not mapped to rsID. They are still in hg38 coordinates as ID (chr:pos). Their coordinates are are hg19 in the final genotype file. ***
+***Please note some TOPMED variants are not mapped to rsID. They are still in hg38 coordinates as ID (chr:pos). Their coordinates are hg19 in the final genotype file.***
 
 ### Covariates (working/covariates/)
 - [x] Compiled PicardTools QC metrics: picard_QC_compiled.tsv
