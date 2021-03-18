@@ -1,4 +1,4 @@
-## cis-e/iso/sQTL mapping 
+## QTL mapping 
 - metadata.ipynb in cis-eQTL: plot data basics, age, sex, infer NA sex
 - analysis.ipynb in cis-eQTL and cis-isoQTL: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - cis-eQTL and cis-isoQTL follow a similar pipeline. See Snakefile

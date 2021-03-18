@@ -1,0 +1,57 @@
+from os.path import join
+import os
+import numpy as np
+import pandas as pd
+import sys
+
+configfile: "config.yaml"
+
+"""
+rules:
+- make_coord_file
+"""
+rule all:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_coord.tsv",
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_top_eqtl.txt"
+        
+rule make_coord_file:
+    input:
+        vcf="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz"
+    output:
+        info="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_info.tsv",
+        coord="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_coord.tsv"
+    resources:  
+        mem_gb=4,
+        time_min=120
+    params:
+        script="scripts/variant_coord.R"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load R/3.6.0
+        bcftools query -f '%CHROM %POS %ID\n' {input.vcf} -o {output.info}
+        Rscript {params.script} \
+            --info {output.info} \
+            --out {output.coord}
+        """
+
+rule make_set_file_mixed_top_eqtl:
+    input:  
+        input_file="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/sig_pheno.txt"
+    output:
+        set_file="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_top_eqtl.txt"
+    resources:  
+        mem_gb=4,
+        time_min=60
+    params:
+        script="scripts/set_file.R"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {params.script} \
+            --input {input.input_file} \
+            --out {output.set_file}
+        """
