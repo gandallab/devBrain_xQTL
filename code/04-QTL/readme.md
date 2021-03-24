@@ -23,8 +23,12 @@ rules:
 - From split_chr_prep_vcf to pca_plots_by_group: refer to ABCD_GWAS Snakefile, running GENESIS for ancestry PCA, and ancestry-aware kinship estimation
 - make_apex_kin_mat: convert pcrelate RData to kinship sparse matrix for apex, refer to apex documentation for format details
 - factor: generating covarites file from known factors and expression factor analysis implemented in apex. (Note: in current version of apex, if a kin matirix is included, eFA will have to be modeled as fixed effects. If no kin/grm included, eFA still can only be modeled as fixed effects. To model inferred factors as random effects, use --epcs $num_factor and --cov $file_with_known_factor_only)
-- cis_lmm: cis-eQTL mapping, mixed ancestry data, lmm with kin as random effects
-- cis_lmm_dtss: specify an alpha for dtss weight
+- cis_lmm_kin: cis-eQTL mapping, mixed ancestry data, lmm with kin as random effects
+- cis_lmm_dtss_kin: specify an alpha for dtss weight
+- cis_ols:
+- make_apex_grm_mat:
+- cis_lmm_grm:
+- cis_lmm_dtss_grm:
 ```
 - cis-sQTL
     - generate STAR index with GENCODE v33, with annotation GTF as recommended. Note for eQTL/isoQTL picard, v29 was used
