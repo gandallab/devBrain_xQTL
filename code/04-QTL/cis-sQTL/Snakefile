@@ -1,0 +1,245 @@
+from os.path import join
+import os
+import numpy as np
+import sys
+
+configfile: "config.yaml"
+
+"""
+rules:
+- index: generate STAR index with Gencode v33, with annotation GTF as recommended
+- See step 1-5 for running STAR, 1st and 2nd pass, WASP filter; Leafcutter bam2junc
+- cluster: note some output files are not specified here
+- remove_chr: 
+- write_chr_blacklist
+- pheno_prep: note some output files are not specified here
+- bgzip_tabix
+- concat
+- pheno_process
+- cov
+- fastqtl_nominal
+"""
+
+rule all:
+    input:
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz.done", num_hcp=np.arange(5, 51, 5), chunk=np.arange(1, 101, 1))
+
+rule index:
+    input:
+        config["GENOME_FASTA"],
+        config["GTF_FILE"]
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/star/gencodev33_STARindex/SAindex"
+    resources:
+        mem_gb=4,
+        time_min=120,
+        num_cores=8
+    shell:
+        """
+        {config[STAR]} --runThreadN {resources.num_cores} \
+            --runMode genomeGenerate \
+            --genomeDir /u/project/gandalm/cindywen/isoform_twas/star/gencodev33_STARindex \
+            --genomeFastaFiles {config[GENOME_FASTA]} \
+            --sjdbGTFfile {config[GTF_FILE]} \
+            --sjdbOverhang 100
+        """
+
+rule cluster: 
+    input:
+        "juncfiles.txt"
+    output:
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_{file}", file=["pooled", "refined", "sortedlibs", "perind.counts.gz", "perind_numers.counts.gz"])
+    resources:
+        mem_gb=6,
+        time_min=150
+    params:
+        script="/u/project/gandalm/cindywen/isoform_twas/sqtl/leafcutter/clustering/leafcutter_cluster.py",
+        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load python/2.7.16
+        mkdir -p {params.outdir}
+        python {params.script} \
+            -j {input[0]} \
+            -m 50 \
+            -l 500000 \
+            -r {params.outdir}
+        """
+
+rule remove_chr:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.gz"
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz"
+    resources:
+        mem_gb=6,
+        time_min=120
+    shell:
+        """
+        zcat {input[0]} | sed '2, $s/chr//' | gzip -c > {output[0]}
+        """
+
+rule write_chr_blacklist:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz"
+    output:
+        "chr_remove.txt"
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        script="./scripts/write_chr_blacklist.R"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {params.script} \
+            --input {input[0]} \
+            --output {output[0]}
+        """
+
+rule pheno_prep:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz",
+        "chr_remove.txt"
+    output:
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz{file}", file=["_prepare.sh",".PCs", ".ave"]),
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.phen_chr{chr_num}", chr_num=np.arange(1, 23, 1)),
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_chr{chr_num}", chr_num=np.arange(1, 23, 1))
+    resources:  
+        mem_gb=6,
+        time_min=120
+    params:
+        script="/u/project/gandalm/cindywen/isoform_twas/sqtl/leafcutter/scripts/prepare_phenotype_table.py"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load python/2.7.16
+        module load htslib/1.9
+        python {params.script} {input[0]} \
+            --ChromosomeBlackList {input[1]}
+        """
+
+rule bgzip_tabix:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz_prepare.sh",
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_chr{chr_num}", chr_num=np.arange(1, 23, 1))
+    output: 
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_chr{chr_num}.gz", chr_num=np.arange(1, 23, 1)),
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_chr{chr_num}.gz.tbi", chr_num=np.arange(1, 23, 1))
+    resources:
+        mem_gb=6,
+        time_min=120
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.9
+        bash {input[0]}
+        """
+
+rule concat:
+    input:
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_chr{chr_num}.gz", chr_num=np.arange(1, 23, 1)),
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_chr{chr_num}.gz.tbi", chr_num=np.arange(1, 23, 1))
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all.gz.tbi"
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.9
+        for i in {{1..22}}; do
+        zcat {params.prefix}_chr${{i}}.gz | bgzip -f >> {params.prefix}_all.gz
+        done
+        tabix -p bed {params.prefix}_all.gz
+        """
+
+rule pheno_process:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all.gz.tbi",
+        expand("/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/geno_subj/geno_subj_{study}.txt", study=["walker","obrien","werling","hdbr","libd"])
+    output:
+        expand("/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all_{file}", file=["fixSubj.tsv", "fixSubj_combat.tsv", "fixSubj_combat.bed.gz", "fixSubj_combat.bed.gz.tbi"])
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        script="./scripts/pheno_process.R",
+        prefix="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all",
+        geno_subj_dir="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/geno_subj/"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        module load htslib/1.9
+        Rscript {params.script} \
+            --prefix {params.prefix} \
+            --geno_subj_dir {params.geno_subj_dir}
+        bgzip -f {params.prefix}_fixSubj_combat.bed
+        tabix -p bed {params.prefix}_fixSubj_combat.bed.gz
+        """
+
+rule cov:
+    input:
+        expr="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all_fixSubj_combat.tsv",
+        picard="/u/project/gandalm/cindywen/isoform_twas/picard/picard_QC_compiled.tsv",
+        geno_pc="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/pca/data.ref.eigenvec",
+        meta="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/metadata_inferSex.tsv"
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/{num_hcp}hcp_cov.txt"
+    resources:
+        mem_gb=8,
+        time_min=120
+    params:
+        script="scripts/cov.R",
+        num_gpc=5,
+        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        mkdir -p {params.outdir}
+        Rscript {params.script} \
+            --num_hcp {wildcards.num_hcp} \
+            --expr {input.expr} \
+            --picard {input.picard} \
+            --geno_pc {input.geno_pc} \
+            --meta {input.meta} \
+            --num_gpc {params.num_gpc} \
+            --outdir {params.outdir}
+        """
+
+rule fastqtl_nominal:
+    input:
+        expr="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all_fixSubj_combat.bed.gz",
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz",
+        cov="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/{num_hcp}hcp_cov.txt"
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz.done"
+    resources:
+        mem_gb=4,
+        time_min=150,
+	num_cores=6
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        {config[FASTQTL]} --vcf {input.geno} \
+                          --bed {input.expr} \
+                          --cov {input.cov} \
+                          --out {output[0]} \
+                          --chunk {wildcards.chunk} 100 \
+                          --seed 123 \
+                          --window 1e5 \
+                          --normal
+        touch {output[0]}.done
+        """

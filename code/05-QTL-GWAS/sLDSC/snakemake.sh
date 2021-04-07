@@ -14,6 +14,6 @@ snakemake \
     --jobs 100 \
     --max-jobs-per-second 10 \
     --restart-times 0 \
-    --latency-wait 5 \
+    --latency-wait 10 \
     --default-resources mem_gb=4 time_min=240 num_cores=1 
 

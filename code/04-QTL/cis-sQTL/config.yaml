@@ -1,3 +1,4 @@
 STAR: "/u/project/gandalm/cindywen/isoform_twas/star/STAR-2.7.3a/bin/Linux_x86_64_static/STAR"
 GENOME_FASTA: "/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome.fa"
 GTF_FILE: "/u/project/gandalm/shared/refGenomes/hg19/Gencode/v33/gencode.v33lift37.annotation.gtf"
+FASTQTL: "/u/project/gandalm/shared/apps/FastQTL/bin/fastQTL.static"

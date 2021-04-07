@@ -24,8 +24,11 @@ rules:
     checkvcf: sanity check
     pca: merge data with 1000genomes and do PCA
     call ancestry in ancestry.ipynb, and do the following rules for eur, amr, afr: variant_qc_ancestry, concat_ancestry, plink_to_vcf_ancestry, crossmap_ancestry, sort_tabix_ancestry, vcf_to_plink_ancestry, checkvcf_ancestry, pca_ancestry
+    rel_check: check plink pi_hat
+    remove_rel and ancestry_remove_rel: remove relatives for QTL mapping
     remove_gene_expr_outlier and ancestry_remove_gene_expr_outlier: prepare genotype file for FastQTL
     remove_tx_expr_outlier and ancestry_remove_tx_expr_outlier: prepare genotype file for FastQTL
     add_chr: for STAR 2nd pass
 ```
 - ancestry.ipynb: infer data ancestry, make plots
+- IBD.ipynb: relatedness check

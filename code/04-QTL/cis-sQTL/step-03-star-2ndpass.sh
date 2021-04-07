@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -l h_data=15G,h_rt=6:00:00,highp,highmem
+#$ -l h_data=15G,h_rt=10:00:00,highp,highmem
 #$ -pe shared 16
 #$ -cwd
 #$ -j y

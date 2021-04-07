@@ -1,6 +1,6 @@
 ## QTL mapping 
 - metadata.ipynb in cis-eQTL: plot data basics, age, sex, infer NA sex
-- analysis.ipynb in cis-eQTL and cis-isoQTL: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
+- eqtl/iso_analysis.ipynb in cis-e/isoQTL: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - cis-eQTL and cis-isoQTL follow a similar pipeline. See Snakefile
 ```
 rules:
@@ -17,7 +17,7 @@ rules:
 - call_perm: call eGene/isoTx, top QTL
 - ancestry_call_perm:
 ```
-- apex. See Snakefile and analysis.ipynb
+- apex. See Snakefile and apex_analysis.ipynb
 ```
 rules:
 - From split_chr_prep_vcf to pca_plots_by_group: refer to ABCD_GWAS Snakefile, running GENESIS for ancestry PCA, and ancestry-aware kinship estimation
@@ -30,9 +30,19 @@ rules:
 - cis_lmm_grm:
 - cis_lmm_dtss_grm:
 ```
-- cis-sQTL
-    - generate STAR index with GENCODE v33, with annotation GTF as recommended. Note for eQTL/isoQTL picard, v29 was used
-    - STAR first pass
-    - Filter splicing junctions
-    - STAR second pass, use SJ discovered in all samples for all samples (multi-sample 2pass mapping)
+- cis-sQTL. See bash scripts and Snakefile
+```
+rules:
+- index: generate STAR index with Gencode v33, with annotation GTF as recommended
+- See step 1-5 for running STAR, 1st and 2nd pass, WASP filter; Leafcutter bam2junc
+- cluster: note some output files are not specified here
+- remove_chr:
+- write_chr_blacklist
+- pheno_prep: note some output files are not specified here
+- bgzip_tabix
+- concat
+- pheno_process
+- cov
+- fastqtl_nominal
+```
   
