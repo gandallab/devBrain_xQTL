@@ -1,0 +1,283 @@
+from os.path import join
+import os
+import numpy as np
+import sys
+
+configfile: "config.yaml"
+
+"""
+Rules:
+make_plink_geno: make plink files for data
+make_plink_eur
+eur_split_chr
+compute_weights_gene_eur
+"""
+
+rule all:
+    input:
+        expand('/u/project/gandalm/cindywen/isoform_twas/twas/log/weights_log/compute_weights_gene_eur_{start}_{end}.done', zip, start=np.arange(1,30702,100), end=np.arange(1,30702,100) + 99),
+	expand('/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/hsq/{start}_{end}.hsq', zip, start=np.arange(1,30702,100), end=np.arange(1,30702,100) + 99),
+	(expand('/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/hsq/{start}_{end}', zip, start=np.arange(1,30702,100), end=np.arange(1,30702,100) + 99)),
+	'/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur_sum.txt',
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur_log',
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc/PGC.SCZ.all.chr',
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc/PGC.SCZ.all.chr.sig'
+
+rule make_plink_geno:
+    input:
+        gene_vcf=config["GENO_DIR"]+'data.hg19.removeGeneOutlier.exclude.weird.vcf.gz',
+        tx_vcf=config["GENO_DIR"]+'data.hg19.removeTxOutlier.exclude.weird.vcf.gz'
+    output:
+        config["GENO_DIR"]+'data.hg19.removeGeneOutlier.exclude.weird.bed',
+        config["GENO_DIR"]+'data.hg19.removeTxOutlier.exclude.weird.bed'
+    resources:
+        mem_gb=8,
+        time_min=240
+    params:
+        gene_prefix=config["GENO_DIR"]+'data.hg19.removeGeneOutlier.exclude.weird',
+        tx_prefix=config["GENO_DIR"]+'data.hg19.removeTxOutlier.exclude.weird'
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+	module load plink/1.90b3.45
+
+        plink --vcf {input.gene_vcf} --make-bed --out {params.gene_prefix} --allow-extra-chr
+        plink --vcf {input.tx_vcf} --make-bed --out {params.tx_prefix} --allow-extra-chr
+        """
+
+rule make_plink_eur:
+    input:
+        gene_vcf=config["GENO_DIR"]+'eur/eur.hg19.removeGeneOutlier.exclude.weird.vcf.gz',
+        tx_vcf=config["GENO_DIR"]+'eur/eur.hg19.removeTxOutlier.exclude.weird.vcf.gz'
+    output:
+        config["GENO_DIR"]+'eur/eur.hg19.removeGeneOutlier.exclude.weird.bed',
+        config["GENO_DIR"]+'eur/eur.hg19.removeTxOutlier.exclude.weird.bed'
+    resources:
+        mem_gb=8,
+        time_min=120
+    params:
+        gene_prefix=config["GENO_DIR"]+'eur/eur.hg19.removeGeneOutlier.exclude.weird',
+        tx_prefix=config["GENO_DIR"]+'eur/eur.hg19.removeTxOutlier.exclude.weird'
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+
+        plink --vcf {input.gene_vcf} --make-bed --out {params.gene_prefix} --allow-extra-chr
+        plink --vcf {input.tx_vcf} --make-bed --out {params.tx_prefix} --allow-extra-chr
+        """
+
+rule eur_split_chr:
+    input:  
+        config["GENO_DIR"]+'eur/eur.hg19.removeGeneOutlier.exclude.weird.bed'
+    output: 
+        config["GENO_DIR"]+'eur/eur.hg19.removeGeneOutlier.exclude.weird.{chr_num}.bed'
+    resources:
+        mem_gb=4,
+        time_min=60
+    params: 
+        prefix=config["GENO_DIR"]+'eur/eur.hg19.removeGeneOutlier.exclude.weird'
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+
+        plink --bfile {params.prefix} \
+            --chr {wildcards.chr_num} \
+            --make-bed \
+            --allow-extra-chr \
+            --out {params.prefix}.{wildcards.chr_num}
+        """
+
+rule compute_weights_gene_eur:
+    input:
+        GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/twas/data/eur_gene_exp_regressed_60hcp.txt"
+    output:
+        '/u/project/gandalm/cindywen/isoform_twas/twas/log/weights_log/compute_weights_gene_eur_{start}_{end}.done',
+	'/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/hsq/{start}_{end}.hsq',
+	directory('/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/hsq/{start}_{end}')
+    resources:
+        mem_gb=16,
+        time_min=120
+    params:
+        WORK_DIR="/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur",
+        GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/eur.hg19.removeGeneOutlier.exclude.weird",
+        OUT_DIR="./WEIGHTS",
+        BATCH_START='{start}',
+        BATCH_END='{end}'
+    shell:
+        """
+        set +o pipefail;
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+	module load plink/1.90b3.45
+
+        mkdir -p {params.WORK_DIR}
+        cd {params.WORK_DIR}
+
+        NR="{params.BATCH_START}_{params.BATCH_END}"
+        mkdir -p tmp/$NR
+        mkdir -p hsq/$NR
+        mkdir -p out/$NR
+        mkdir -p {params.OUT_DIR}
+
+        # Loop through each gene expression phenotype in the batch
+	# 1st row is header
+	START_LINE={params.BATCH_START}
+	if (($START_LINE == 1)); then START_LINE=2; fi
+        cat {input.GENE_EXPR} | awk -vs=$START_LINE -ve={params.BATCH_END} 'NR >= s && NR <= e' |  while read PARAM; do
+
+        # Get the gene positions +/- 1Mb
+        CHR=`echo $PARAM | awk '{{ print $3 }}'`
+        P0=`echo $PARAM | awk '{{ print $4 - 1e6 }}'`
+        P1=`echo $PARAM | awk '{{ print $4 + 1e6 }}'`
+        GNAME=`echo $PARAM | awk '{{ print $1 }}'`
+	
+	# genes with only 1 cis-variant got error, removing
+	if [[ $GNAME =~ ^(ENSG00000272755|ENSG00000215142|ENSG00000277350|ENSG00000274349|ENSG00000234138)$ ]]; then
+		continue
+	fi
+	OUT="tmp/$NR/$GNAME"
+
+        echo $GNAME $CHR $P0 $P1
+
+        # Pull out the current gene expression phenotype
+        echo $PARAM | tr ' ' '\n' | tail -n+5 | paste {input.GENE_EXPR}.ID - > $OUT.pheno
+
+        # Get the locus genotypes for all samples and set current gene expression as the phenotype
+	# Note: not using plink2, --force-intersect not ending; plink/1.9 does not take negtive number --from/to-bp
+	if (($P0 < 0)); then P0=0; fi
+        plink --bfile {params.GENO_PREFIX}.$CHR \
+            --pheno $OUT.pheno \
+            --make-bed \
+            --out $OUT \
+            --keep $OUT.pheno \
+            --chr $CHR \
+            --from-bp $P0 \
+            --to-bp $P1 \
+	    --allow-no-sex
+        
+        FINAL_OUT="{params.OUT_DIR}/$GNAME"
+
+        Rscript {config[FUSION_SUSIE_SCRIPT]} \
+            --bfile $OUT \
+            --tmp $OUT.tmp \
+            --out $FINAL_OUT \
+            --verbose 2 \
+            --save_hsq \
+            --PATH_gcta {config[GCTA]} \
+            --models top1,enet,susie \
+	    --PATH_plink {config[PLINK]} 
+        
+        # Append heritability output to hsq file
+        # Not using lambda for resources or restarting multiple times due to this!
+	cat $FINAL_OUT.hsq >> hsq/$NR.hsq
+
+        # Clean-up just in case
+        rm -f $FINAL_OUT.hsq $OUT.tmp.*
+
+        # Remove all intermediate files
+        rm $OUT.*
+
+        # GO TO THE NEXT GENE
+        done
+
+        touch {output[0]}
+        """
+# Here I manually generate list of genes with positive h2 and <.05 pval, made h2 plots, and generate WTGLIST file. Can add in Snakefile
+
+rule summary_wgt:
+    input:
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur_sig_h2_WGTLIST.txt'
+    output:
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur_sum.txt',
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur_log'
+    resources:
+        mem_gb=4,
+        time_min=120
+    params:
+        script='/u/project/gandalm/cindywen/isoform_twas/twas/code/FUSION.profile_wgt_custom.R'
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {params.script} \
+        	{input[0]} \
+        	{output[0]} \
+                {output[1]}
+	"""
+
+rule make_pos_file:
+    input:
+        weights='/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur_sig_h2_WGTLIST.txt',
+        bed='/u/project/gandalm/cindywen/isoform_twas/twas/data/eur_gene_exp_regressed_60hcp.txt',
+        sig_gene='/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur_sig_h2.txt',
+	gtf_gene='/u/project/gandalm/cindywen/isoform_twas/salmon/gencode.v33lift37.annotation.gene.info.tsv'
+    output:
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur.pos'
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        rscript='./make_pos_file.R'
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+
+        Rscript {params.rscript} \
+            {input.weights} \
+            {input.bed} \
+            {input.sig_gene} \
+            {input.gtf_gene} \
+            {output[0]}
+        """
+
+rule assoc:
+    input:
+        gwas_sum_stats='/u/project/gandalm/shared/GWAS/SCZ.Pardinas.PGC.2018/SCZ.Clozuk.2018.sumstats.gz',
+        weights='/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/gene_eur.pos'
+    output:
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc/PGC.SCZ.{chr_num}.dat'
+    resources:
+        mem_gb=8,
+        time_min=240
+    params:
+        assoc_dir='/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc',
+        data_ld_prefix='/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/eur.hg19.removeGeneOutlier.exclude.weird.',
+        weights_dir='/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/WEIGHTS'
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        mkdir -p {params.assoc_dir}
+
+        Rscript {config[FUSION_ASSOC_SCRIPT]} \
+            --sumstats {input.gwas_sum_stats} \
+            --weights {input.weights} \
+            --weights_dir {params.weights_dir} \
+            --ref_ld_chr {params.data_ld_prefix} \
+            --chr {wildcards.chr_num} \
+            --out {output[0]}
+        """
+
+rule concat_extract:
+    input:
+        expand('/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc/PGC.SCZ.{chr_num}.dat', chr_num=np.arange(1,23))
+    output:
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc/PGC.SCZ.all.chr',
+        '/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc/PGC.SCZ.all.chr.sig'
+    resources:
+        meme_gb=4,
+        time_min=60
+    params:
+        prefix='/u/project/gandalm/cindywen/isoform_twas/twas/gene_eur/assoc/PGC.SCZ'
+    shell:
+        """
+        # 1. combine chr results
+        head -1 {params.prefix}.1.dat > {output[0]}
+        tail -n +2 -q {params.prefix}.*.dat >> {output[0]}
+
+        # 2. extract significant features; N is the total number of features in the assoc testing, or number of lines in the pos file
+        cat {output[0]} | awk 'NR == 1 || $NF < 0.05/5108' > {output[1]}
+        """

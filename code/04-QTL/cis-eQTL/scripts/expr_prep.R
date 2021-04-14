@@ -23,6 +23,7 @@ p <- add_argument(p, "--gene_gtf", help="GENCODE annot")
 p <- add_argument(p, "--gene_tpm", help="Salmon, tximport output")
 p <- add_argument(p, "--geno_subj_dir", help="Subject lists")
 p <- add_argument(p, "--outdir", help="")
+p <- add_argument(p, "--level", help="gene or tx")
 args <- parse_args(p)
 
 
@@ -210,7 +211,7 @@ outliers <- (Z.C < -3)
 
 datExpr.final <- datExpr.vst
 datExpr.final <- datExpr.final[,!outliers]
-write.table(datExpr.final, paste0(args$outdir,"gene.counts.processed.noComBat.tsv"), col.names = T, row.names = T, quote = F, sep = "\t")
+write.table(datExpr.final, paste0(args$outdir,args$level,".counts.processed.noComBat.tsv"), col.names = T, row.names = T, quote = F, sep = "\t")
 
 
 ##### 5
@@ -246,11 +247,11 @@ exprMat <- as.matrix(datExpr.final)
 combat_expr <- ComBat(dat = exprMat, batch = data.batch, mod = NULL, par.prior = TRUE, prior.plots = FALSE)
 combat_expr <- as.data.frame(combat_expr)
 
-write.table(combat_expr, paste0(args$outdir, "gene.counts.processed.tsv"), col.names = T, row.names = T, quote = F, sep = "\t")
+write.table(combat_expr, paste0(args$outdir, args$level, ".counts.processed.tsv"), col.names = T, row.names = T, quote = F, sep = "\t")
 
 outlier.df <- data.frame(c(which(outliers)))
 outlier.df$c.which.outliers.. <- rownames(outlier.df)
-write.table(outlier.df,paste0(args$outdir,"gene.outlier.txt"), sep="\t", quote=F, col.names = F, row.names = F)
+write.table(outlier.df,paste0(args$outdir, args$level, ".outlier.txt"), sep="\t", quote=F, col.names = F, row.names = F)
 
 
 ##### 6
@@ -284,4 +285,4 @@ bed <- bed[order(bed$V1, bed$V2),]
 bed <- bed %>% select(-V4)
 colnames(bed)[1:4] <- c("#Chr", "start", "end", "ID")
 
-write.table(bed, paste0(args$outdir, "gene.counts.scaled.normalized.bed"), quote=F, sep="\t", row.names=F, col.names=T)
+write.table(bed, paste0(args$outdir, args$level, ".counts.scaled.normalized.bed"), quote=F, sep="\t", row.names=F, col.names=T)

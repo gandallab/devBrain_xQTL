@@ -1,5 +1,6 @@
-## QTL-GWAS
-### sLDSC (partitioned heritability)
+# QTL-GWAS
+## sLDSC 
+- ldsc_analysis.ipynb: make partitioned h2 plots
 ```
 rules:
 - make_coord_file
@@ -10,5 +11,4 @@ rules:
 - make_annot_mixed_top_isoqtl
 - partition_h2_mixed_top_isoqtl
 ```
-- ldsc_analysis.ipynb: make plots
-### TWAS-FUSION
+## TWAS-FUSION

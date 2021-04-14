@@ -1,4 +1,4 @@
-## RNA-seq
+# RNA-seq
 -   Pre-alignment QC [FastQC v0.11.9](https://github.com/s-andrews/FastQC)
 -   Alignment [STAR-2.7.3a](https://github.com/alexdobin/STAR); index with [GENCODE v29lift37](https://www.gencodegenes.org/) genome and annotation; note there is a new run of STAR for sQTL
 -   Alignment QC [PicardTools 2.21.7](https://github.com/broadinstitute/picard)

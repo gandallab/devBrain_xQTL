@@ -1,0 +1,11 @@
+GENO_DIR: "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/"
+# Softwares
+# add GEMMA for bslmm
+GCTA: "/u/project/gandalm/shared/apps/gcta_1.93.0beta/gcta64"
+PLINK: "/u/project/gandalm/shared/apps/plink2"
+# Scripts
+FUSION_SUSIE_SCRIPT: "/u/project/gandalm/cindywen/isoform_twas/twas/code/twas_susie_nmancuso/FUSION.compute_weights_wSusie.R"
+FUSION_ASSOC_SCRIPT: "/u/project/gandalm/shared/TWAS/code/FUSION.assoc_test.R"
+FUSION_POST_SCRIPT: "/u/project/gandalm/shared/TWAS/code/FUSION.post_process.R"
+# Ref, to extract only ref snps (not using!)
+LDREF: "/u/project/gandalm/shared/TWAS/code/LDREF"

@@ -8,30 +8,24 @@ configfile: "config.yaml"
 
 """
 rules:
-    expr_prep: expression filter, VST normalization, outlier detection, ComBat, create bed file
-    ancestry_expr: subset ancestries
-    cov: generate covariates files
-    ancestry_cov:
-    fastqtl_nominal:
-    ancestry_fastqtl_nominal:
-    call_nominal: identify significant nominal associations
-    ancestry_call_nominal:
-    fastqtl_perm:
-    ancestry_fastqtl_perm:
-    call_perm:
-    ancestry_call_perm:
+- expr_prep: expression filter, VST normalization, outlier detection, ComBat, create bed file
+- ancestry_expr: subset ancestries
+- cov: generate covariates files
+- ancestry_cov:
+- fastqtl_nominal:
+- ancestry_fastqtl_nominal:
+- call_nominal: identify significant nominal associations
+- ancestry_call_nominal:
+- fastqtl_perm:
+- ancestry_fastqtl_perm:
+- call_perm:
+- ancestry_call_perm:
 """
 rule all:
     input:
         expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/{file}", file=["all.chunks.txt.gz", "significant_assoc.txt", "significant_feature_count.txt"], num_hcp=np.arange(10, 101, 10)),
         expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}", file=["all.chunks.txt.gz", "significant_assoc.txt", "significant_feature_count.txt"], num_hcp=np.arange(10, 101, 10), ancestry=["eur"]),
         expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}", file=["all.chunks.txt.gz", "significant_assoc.txt", "significant_feature_count.txt"], num_hcp=np.arange(5, 51, 5), ancestry=["amr", "afr"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_perm_70hcp/chunk{chunk}.txt.gz.done", chunk=np.arange(1, 201, 1)),
-        expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_perm_70hcp/{file}", file=["all.chunks.txt.gz", "sig_pheno.txt"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/chunk{chunk}.txt.gz.done", ancestry=["eur"], num_hcp=60, chunk=np.arange(1, 201, 1)),
-	expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/chunk{chunk}.txt.gz.done", ancestry=["amr"], num_hcp=10, chunk=np.arange(1, 201, 1)),
-        
-	
 
 rule expr_prep:
     input:  
@@ -45,9 +39,10 @@ rule expr_prep:
         mem_gb=4,
         time_min=60
     params: 
-        script="scripts/expr_prep.R",
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/expr_prep.R",
         geno_subj_dir="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/geno_subj/",
-        outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/"
+        outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/",
+        level="tx"
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -59,10 +54,11 @@ rule expr_prep:
             --gene_gtf {input[1]} \
             --gene_tpm {input[2]} \
             --geno_subj_dir {params.geno_subj_dir} \
-            --outdir {params.outdir}
+            --outdir {params.outdir} \
+            --level {params.level}
         
-        bgzip {params.outdir}tx.counts.scaled.normalized.bed
-        tabix -p bed {params.outdir}tx.counts.scaled.normalized.bed.gz
+        bgzip {params.outdir}{params.level}.counts.scaled.normalized.bed
+        tabix -p bed {params.outdir}{params.level}.counts.scaled.normalized.bed.gz
         """
 
 rule ancestry_expr:
@@ -75,8 +71,9 @@ rule ancestry_expr:
         mem_gb=4,
         time_min=60
     params:
-        script="scripts/ancestry_expr.R",
-        data_dir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/"
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/ancestry_expr.R",
+        data_dir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/",
+        level="tx"
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -87,9 +84,10 @@ rule ancestry_expr:
         Rscript {params.script} \
             --data_dir {params.data_dir} \
             --ancestry {wildcards.ancestry} \
-            --subj_list {input[4]}
-        bgzip {params.data_dir}{wildcards.ancestry}/tx.counts.scaled.normalized.bed
-        tabix -p bed {params.data_dir}{wildcards.ancestry}/tx.counts.scaled.normalized.bed.gz
+            --subj_list {input[4]} \
+            --level {params.level}
+        bgzip {params.data_dir}{wildcards.ancestry}/{params.level}.counts.scaled.normalized.bed
+        tabix -p bed {params.data_dir}{wildcards.ancestry}/{params.level}.counts.scaled.normalized.bed.gz
         """
 
 rule cov:
@@ -104,7 +102,7 @@ rule cov:
         mem_gb=8,
         time_min=60
     params:
-        script="scripts/cov.R",
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/cov.R",
         num_gpc=5,
         outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/"
     shell:
@@ -134,7 +132,7 @@ rule ancestry_cov:
         mem_gb=8,
         time_min=60
     params:
-        script="scripts/ancestry_cov.R",
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/ancestry_cov.R",
         num_gpc=5,
         outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/{ancestry}/"
     shell:
@@ -156,7 +154,8 @@ rule fastqtl_nominal:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx.counts.scaled.normalized.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeTxOutlier.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/{num_hcp}hcp_cov.txt"
+        cov="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/{num_hcp}hcp_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt"
     output:
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz",
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz.done"
@@ -176,7 +175,8 @@ rule fastqtl_nominal:
                           --chunk {wildcards.chunk} 100 \
                           --seed 123 \
                           --window 1e6 \
-                          --normal
+                          --normal \
+                          --exclude-samples {input.rel_file}
         touch {output[0]}.done
         """
 
@@ -184,7 +184,8 @@ rule ancestry_fastqtl_nominal:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/{ancestry}/tx.counts.scaled.normalized.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeTxOutlier.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/{ancestry}/{num_hcp}HCP_cov.txt"
+        cov="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/{ancestry}/{num_hcp}HCP_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt"
     output:
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/chunk{chunk}.txt.gz",
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/chunk{chunk}.txt.gz.done"
@@ -204,7 +205,8 @@ rule ancestry_fastqtl_nominal:
                           --chunk {wildcards.chunk} 100 \
                           --seed 123 \
                           --window 1e6 \
-                          --normal
+                          --normal \
+                          --exclude-samples {input.rel_file}
         touch {output[0]}.done
         """
 
@@ -220,7 +222,7 @@ rule call_nominal:
 	num_cores=6
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/",
-        script="scripts/call_nominal.R"
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_nominal.R"
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -243,7 +245,7 @@ rule ancestry_call_nominal:
 	num_cores=6
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/",
-        script="scripts/call_nominal.R"
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_nominal.R"
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -323,7 +325,29 @@ rule call_perm:
         time_min=120
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_perm_70hcp/",
-        script="scripts/call_perm.R"
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_perm.R"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+
+        zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}all.chunks.txt.gz
+        Rscript {params.script} \
+            --outdir {params.outdir}
+        """
+
+rule ancestry_call_perm:
+    input:
+        expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{{ancestry}}_perm_{{num_hcp}}HCP/chunk{chunk}.txt.gz", chunk=np.arange(1,201,1)),
+        expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{{ancestry}}_perm_{{num_hcp}}HCP/chunk{chunk}.txt.gz.done", chunk=np.arange(1,201,1))
+    output:
+        expand("/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{{ancestry}}_perm_{{num_hcp}}HCP/{file}", file=["all.chunks.txt.gz", "sig_pheno.txt"])
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/",
+        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_perm.R"
     shell:
         """
         . /u/local/Modules/default/init/modules.sh

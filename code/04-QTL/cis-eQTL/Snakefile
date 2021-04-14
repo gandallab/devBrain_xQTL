@@ -8,18 +8,32 @@ configfile: "config.yaml"
 
 """
 rules:
+prep:
     expr_prep: expression filter, VST normalization, outlier detection, ComBat, create bed file
     ancestry_expr: subset ancestries
     cov: generate covariates files
     ancestry_cov:
+nominal pass:
     fastqtl_nominal:
     ancestry_fastqtl_nominal:
     call_nominal: identify significant nominal associations
     ancestry_call_nominal:
+permutation pass:
     fastqtl_perm:
     ancestry_fastqtl_perm:
     call_perm:
     ancestry_call_perm:
+conditional pass:
+    permutations_all_threshold: compute a npval threshold for all expressed genes
+    conditional:
+    get_top_variants:
+susie finemapping:
+    vcf_to_dosage
+    make_susie_meta
+    make_susie_expr
+    run_susie
+    merge_susie
+    sort_susie
 """
 rule all:
     input:
@@ -27,13 +41,11 @@ rule all:
         expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}", file=["all.chunks.txt.gz", "significant_assoc.txt", "significant_feature_count.txt"], num_hcp=np.arange(10, 101, 10), ancestry=["eur"]),
         expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}", file=["all.chunks.txt.gz", "significant_assoc.txt", "significant_feature_count.txt"], num_hcp=np.arange(5, 51, 5), ancestry=["amr", "afr"]),
         expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/{file}", file=["all.chunks.txt.gz", "sig_pheno.txt"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}", ancestry=["eur"], num_hcp=50, file=["all.chunks.txt.gz", "sig_pheno.txt"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}", ancestry=["amr"], num_hcp=15, file=["all.chunks.txt.gz", "sig_pheno.txt"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}", ancestry=["afr"], num_hcp=20, file=["all.chunks.txt.gz", "sig_pheno.txt"])
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}", file=["all.chunks.txt.gz", "sig_pheno.txt"], ancestry=["eur"], num_hcp=50),
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}", file=["all.chunks.txt.gz", "sig_pheno.txt"], ancestry=["amr"], num_hcp=15),
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}", file=["all.chunks.txt.gz", "sig_pheno.txt"], ancestry=["afr"], num_hcp=25),
 
-
-
-rule expr_prep:
+rule expr_prep: 
     input:  
         "/u/project/gandalm/cindywen/isoform_twas/salmon/expression.final/gene.noVersion.scaled.counts.tsv",
         "/u/project/gandalm/cindywen/isoform_twas/salmon/gencode.gene.noVersion.tsv",
@@ -47,7 +59,8 @@ rule expr_prep:
     params: 
         script="scripts/expr_prep.R",
         geno_subj_dir="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/geno_subj/",
-        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/"
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/",
+        level="gene"
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -59,10 +72,11 @@ rule expr_prep:
             --gene_gtf {input[1]} \
             --gene_tpm {input[2]} \
             --geno_subj_dir {params.geno_subj_dir} \
-            --outdir {params.outdir}
+            --outdir {params.outdir} \
+            --level {params.level}
         
-        bgzip {params.outdir}gene.counts.scaled.normalized.bed
-        tabix -p bed {params.outdir}gene.counts.scaled.normalized.bed.gz
+        bgzip {params.outdir}{params.level}.counts.scaled.normalized.bed
+        tabix -p bed {params.outdir}{params.level}.counts.scaled.normalized.bed.gz
         """
 
 rule ancestry_expr:
@@ -76,7 +90,8 @@ rule ancestry_expr:
         time_min=60
     params:
         script="scripts/ancestry_expr.R",
-        data_dir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/"
+        data_dir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/",
+        level="gene"
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -87,9 +102,10 @@ rule ancestry_expr:
         Rscript {params.script} \
             --data_dir {params.data_dir} \
             --ancestry {wildcards.ancestry} \
-            --subj_list {input[4]}
-        bgzip {params.data_dir}{wildcards.ancestry}/gene.counts.scaled.normalized.bed
-        tabix -p bed {params.data_dir}{wildcards.ancestry}/gene.counts.scaled.normalized.bed.gz
+            --subj_list {input[4]} \
+            --level {params.level}
+        bgzip {params.data_dir}{wildcards.ancestry}/{params.level}.counts.scaled.normalized.bed
+        tabix -p bed {params.data_dir}{wildcards.ancestry}/{params.level}.counts.scaled.normalized.bed.gz
         """
 
 rule cov:
@@ -157,7 +173,8 @@ rule fastqtl_nominal:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{num_hcp}hcp_cov.txt"
+        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{num_hcp}hcp_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt"
     output:
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz",
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz.done"
@@ -176,7 +193,8 @@ rule fastqtl_nominal:
                           --chunk {wildcards.chunk} 100 \
                           --seed 123 \
                           --window 1e6 \
-                          --normal
+                          --normal \
+                          --exclude-samples {input.rel_file}
         touch {output[0]}.done
         """
 
@@ -184,7 +202,8 @@ rule ancestry_fastqtl_nominal:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/gene.counts.scaled.normalized.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/{num_hcp}HCP_cov.txt"
+        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/{num_hcp}HCP_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt"
     output:
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/chunk{chunk}.txt.gz",
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/chunk{chunk}.txt.gz.done"
@@ -203,7 +222,8 @@ rule ancestry_fastqtl_nominal:
                           --chunk {wildcards.chunk} 100 \
                           --seed 123 \
                           --window 1e6 \
-                          --normal
+                          --normal \
+                          --exclude-samples {input.rel_file}
         touch {output[0]}.done
         """
 
@@ -224,7 +244,7 @@ rule call_nominal:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}/all.chunks.txt.gz
+        zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}all.chunks.txt.gz
         Rscript {params.script} \
             --outdir {params.outdir}
         """
@@ -246,7 +266,7 @@ rule ancestry_call_nominal:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}/all.chunks.txt.gz
+        zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}all.chunks.txt.gz
         Rscript {params.script} \
             --outdir {params.outdir}
         """
@@ -256,7 +276,8 @@ rule fastqtl_perm:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov.txt"
+        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt"
     output:
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/chunk{chunk}.txt.gz",
 	"/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/chunk{chunk}.txt.gz.done"
@@ -277,7 +298,8 @@ rule fastqtl_perm:
                           --chunk {wildcards.chunk} 300 \
                           --seed 123 \
                           --window 1e6 \
-                          --normal
+                          --normal \
+                          --exclude-samples {input.rel_file}
         touch {output[0]}.done
         """
 
@@ -285,7 +307,8 @@ rule ancestry_fastqtl_perm:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/gene.counts.scaled.normalized.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/{num_hcp}HCP_cov.txt"
+        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/{num_hcp}HCP_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt"
     output:
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/chunk{chunk}.txt.gz",
 	"/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/chunk{chunk}.txt.gz.done"
@@ -306,7 +329,8 @@ rule ancestry_fastqtl_perm:
                           --chunk {wildcards.chunk} 300 \
                           --seed 123 \
                           --window 1e6 \
-                          --normal
+                          --normal \
+                          --exclude-samples {input.rel_file}
         touch {output[0]}.done
         """
 
@@ -352,4 +376,241 @@ rule ancestry_call_perm:
         zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}all.chunks.txt.gz
         Rscript {params.script} \
             --outdir {params.outdir}
+        """
+
+rule permutations_all_threshold:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/all.chunks.txt.gz"
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/permutations_all_threshold.txt.gz"
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        script="scripts/permutations_all_threshold.R",
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+
+        Rscript {params.script} \
+            --outdir {params.outdir}
+        gzip {params.outdir}permutations_all_threshold.txt
+        """
+
+rule make_qtltools_bed:
+    input:
+        fastqtl_expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz"
+    output: 
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/qtltools.gene.counts.scaled.normalized.bed.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/qtltools.gene.counts.scaled.normalized.bed.gz.tbi"
+    resources:
+        mem_gb=6,
+        time_min=120
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.9
+
+        zcat {input.fastqtl_expr} | awk '{{ $4=$4" . +"; print $0 }}' | tr " " "\t" | bgzip -c > {output[0]}
+        tabix -p bed {output[0]}
+        """
+
+rule conditional:
+    input:
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/qtltools.gene.counts.scaled.normalized.bed.gz",
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov.txt",
+        threshold="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/permutations_all_threshold.txt.gz"
+    output: 
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/chunk{chunk}.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/chunk{chunk}.txt.done"
+    resources:
+        mem_gb=6,
+        time_min=480,
+        num_cores=6
+    params: 
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/"
+    shell:
+        """
+        mkdir -p {params.outdir}
+        {config[QTLTOOLS]} cis \
+            --vcf {input.geno} \
+            --bed {input.expr} \
+            --cov {input.cov} \
+            --mapping {input.threshold} \
+            --chunk {wildcards.chunk} 300 \
+            --out {output[0]}
+        touch {output[1]}
+        """
+
+rule get_top_variants:
+    input:
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/chunk{chunk}.txt.done", chunk=np.arange(1,301,1))
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/conditional_full.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/conditional_top_variants.txt"
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/"
+    shell:
+        """
+        cat {params.outdir}chunk*.txt > {params.outdir}conditional_full.txt
+        cat {params.outdir}conditional_full.txt | awk '{{ if ($19 == 1) print $0}}' > {params.outdir}conditional_top_variants.txt
+        """
+
+# start susie
+rule vcf_to_dosage:
+    input:
+        vcf="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz"
+    output:
+        expand("/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{file}", file=["4_columns.tsv", "sample_list.tsv", "header.tsv", "header_row.tsv.gz", "dose_matrix.tsv.gz", "filtered.hg19.sorted.removeGeneOutlier.dose.tsv.gz"])
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier",
+        outdir="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/"
+    shell: 
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load htslib/1.9
+        
+        # Extract header
+        printf 'CHROM\nPOS\nREF\nALT\n' > {params.outdir}4_columns.tsv
+        bcftools query -l {input.vcf} > {params.outdir}sample_list.tsv
+        cat {params.outdir}4_columns.tsv {params.outdir}sample_list.tsv > {params.outdir}header.tsv
+        {config[CSVTK]} transpose {params.outdir}header.tsv -T | gzip > {params.outdir}header_row.tsv.gz
+
+        # Extract dosage and merge
+        bcftools +dosage {input.vcf} -- -t GT | tail -n+2 | gzip > {params.outdir}dose_matrix.tsv.gz
+        zcat {params.outdir}header_row.tsv.gz {params.outdir}dose_matrix.tsv.gz | bgzip > {params.prefix}.dose.tsv.gz
+        tabix -s1 -b2 -e2 -S1 {params.prefix}.dose.tsv.gz
+        """
+
+rule make_susie_meta:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz"
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/phenotype_meta.tsv",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/sample_meta.tsv"
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        script="scripts/make_susie_meta.R",
+        qtl_group="mixed_ciseqtl_90hcp_perm"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+
+        Rscript {params.script} \
+            --bed {input[0]} \
+            --qtl_group {params.qtl_group}
+        """
+
+rule make_susie_expr:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.processed.tsv"
+    output: 
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.processed.susie.tsv"
+    resources:
+        mem_gb=4,
+        time_min=60
+    params:
+        script="scripts/make_susie_expr.R",
+        outname="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.processed.susie.tsv"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+
+        Rscript {params.script} \
+            --input {input[0]} \
+            --outname {params.outname}
+        """
+
+rule run_susie:
+    input:
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.processed.susie.tsv",
+        pheno_meta="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/phenotype_meta.tsv",
+        sample_meta="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/sample_meta.tsv",
+        sig_pheno="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/sig_pheno.txt",
+        genotype_matrix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.dose.tsv.gz",
+        covariates="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov_629temp.txt"
+    output:
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm.{{batch}}_"+config["SUSIE_N_BATCH"]+".{file}", file=["txt","cred.txt","snp.txt"])
+    resources:
+        mem_gb=4,
+        num_cores=4,
+        time_min=120
+    params:
+        script="scripts/run_susie_customized.R",
+        cisdistance=1000000,
+        permuted="true",
+        qtl_group="mixed_ciseqtl_90hcp_perm",
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/",
+        quant_method="gene_counts"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        mkdir -p {params.out_dir}
+
+        Rscript {params.script} \
+            --expression_matrix {input.expr} \
+            --phenotype_meta {input.pheno_meta} \
+            --sample_meta {input.sample_meta} \
+            --sig_pheno {input.sig_pheno} \
+            --covariates {input.covariates} \
+            --genotype_matrix {input.genotype_matrix} \
+            --chunk '{wildcards.batch} {config[SUSIE_N_BATCH]}' \
+            --cisdistance {params.cisdistance} \
+            --out_prefix {params.out_dir}{params.qtl_group}.{wildcards.batch}_{config[SUSIE_N_BATCH]} \
+            --permuted {params.permuted} \
+            --qtl_group {params.qtl_group} \
+            --quant_method {params.quant_method}
+        """
+
+rule merge_susie:
+    input:
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm.{batch}_"+config["SUSIE_N_BATCH"]+".{file}", file=["txt","cred.txt","snp.txt"], batch=np.arange(1,501,1))
+    output:
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm.{file}", file=["txt.gz","cred.txt.gz","snp.txt.gz"])
+    resources:
+        mem_gb=6,
+        time_min=120
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.9
+        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.txt | bgzip -c > {params.prefix}.txt.gz
+        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.cred.txt | bgzip -c > {params.prefix}.cred.txt.gz
+        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.snp.txt | bgzip -c > {params.prefix}.snp.txt.gz
+        """
+
+rule sort_susie:
+    input:
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm.{file}", file=["txt.gz","cred.txt.gz","snp.txt.gz"])
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm_susie_merged.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm_purity_filtered.txt.gz"
+    resources:  
+        mem_gb=6,
+        time_min=120
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm"
+    shell:
+        """ 
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.9
+        gunzip -c {input[0]} > {params.prefix}_susie_merged.txt
+        (head -n 1 {params.prefix}_susie_merged.txt && tail -n +2 {params.prefix}_susie_merged.txt | sort -k3 -k4n ) | bgzip > {params.prefix}_purity_filtered.txt.gz
         """
