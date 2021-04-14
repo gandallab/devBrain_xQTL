@@ -1,8 +1,8 @@
-# QTL mapping 
+# QTL
 ## cis-eQTL
 - metadata.ipynb: plot data demographics, age, sex, infer NA sex, etc.
 - eqtl_analysis.ipynb: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
-- susie_analysis: susie finemapping results
+- susie_analysis.ipynb: susie finemapping results
 - Snakefile
 ```
 rules:
