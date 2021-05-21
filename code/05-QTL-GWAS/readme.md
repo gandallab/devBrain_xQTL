@@ -1,6 +1,7 @@
 # QTL-GWAS
 ## sLDSC 
-- ldsc_analysis.ipynb: make partitioned h2 plots
+- `ldsc_analysis.ipynb`: make partitioned h2 plots
+- `Snakefile`
 ```
 rules:
 - make_coord_file
@@ -12,3 +13,15 @@ rules:
 - partition_h2_mixed_top_isoqtl
 ```
 ## TWAS-FUSION
+- `TWAS_analysis.ipynb`
+- `Snakefile`
+```
+rules:
+- make_plink
+- compute_weights
+- concat_hsq
+- summary_wgt
+- make_pos_file
+- assoc
+- concat_extract
+```

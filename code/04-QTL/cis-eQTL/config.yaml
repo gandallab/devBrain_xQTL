@@ -2,6 +2,7 @@
 FASTQTL: "/u/project/gandalm/shared/apps/FastQTL/bin/fastQTL.static"
 QTLTOOLS: "/u/project/gandalm/shared/apps/QTLtools_1.0/QTLtools_1.0_CentOS6.8_x86_64"
 CSVTK: "/u/project/gandalm/shared/apps/csvtk"
+DECON-QTL: "/u/project/gandalm/shared/apps/Decon-eQTL-v1.4-jar-with-dependencies.jar"
 
 # params
 SUSIE_N_BATCH: "500"

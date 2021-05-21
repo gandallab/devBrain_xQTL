@@ -1,9 +1,10 @@
 # QTL
 ## cis-eQTL
-- metadata.ipynb: plot data demographics, age, sex, infer NA sex, etc.
-- eqtl_analysis.ipynb: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
-- susie_analysis.ipynb: susie finemapping results
-- Snakefile
+- `metadata.ipynb`: plot data demographics, age, sex, infer NA sex, etc.
+- `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
+- `susie_analysis.ipynb`: susie finemapping results
+- `cell_specific_analysis.ipynb`: cell type/group specific and interaction results
+- `Snakefile`
 ```
 rules:
 prep:
@@ -32,31 +33,58 @@ susie finemapping:
     run_susie
     merge_susie
     sort_susie
+cell type/group interaction:
+    make_decon_dosage
+    snps_to_test
+    fix_decon_dosage
+    run_decon_qtl
+cell type/group specific:
+    bgzip_tabix
+    cg_cov
+    cg_fastqtl_nominal
+    cg_call_nominal
 ```
 ## cis-isoQTL
-- isoqtl_analysis.ipynb
-- Snakefile follows a similar pipeline as cis-eQTL
+- `isoqtl_analysis.ipynb`
+- `Snakefile` follows a similar pipeline as cis-eQTL
 ## cis-sQTL
-- sqtl_analysis.ipynb
-- Snakefile
+- `sqtl_analysis.ipynb`
+- `Snakefile`
 ```
 rules:
-- index: generate STAR index with Gencode v33, with annotation GTF as recommended
-- See bash scripts step 1-5 for running STAR, 1st and 2nd pass, WASP filter; Leafcutter bam2junc
-- cluster
-- remove_chr
-- write_chr_blacklist
-- pheno_prep
-- bgzip_tabix
-- concat
-- pheno_process
-- cov
-- fastqtl_nominal
+STAR
+    - index: generate STAR index with Gencode v33, with annotation GTF as recommended
+    - See step 1-5 for running STAR, 1st and 2nd pass, WASP filter; Leafcutter bam2junc
+Leafcutter combined ancestry
+    - cluster: note some output files are not specified here
+    - remove_chr: 
+    - write_chr_blacklist
+    - pheno_prep: note some output files are not specified here
+    - bgzip_tabix
+    - concat
+    - pheno_process
+    - cov
+    - fastqtl_nominal
+    - call_nominal
+    - fastqtl_perm
+    - call_perm
+Separate ancestry
+    - ancestry_pheno
+    - ancestry_cov
+    - ancestry_fastqtl_nominal
+    - ancestry_call_nominal
+    - ancestry_fastqtl_perm
+    - ancestry_call_perm
+Intron annotation
+    - prepare_leafviz_annot
+    - map_clusters_to_genes
+    - annotate_intron
+    - summarise_annot
 ```
 ## trans
 ## APEX
-- apex_analysis.ipynb
-- Snakefile
+- `apex_analysis.ipynb`
+- `Snakefile`:
 ```
 rules:
 - From split_chr_prep_vcf to pca_plots_by_group: run GENESIS for ancestry PCA, and ancestry-aware kinship estimation

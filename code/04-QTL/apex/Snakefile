@@ -3,13 +3,16 @@ import os
 import numpy as np
 import sys
 
+
 configfile: "config.yaml"
+
 
 """
 rules:
 - From split_chr_prep_vcf to pca_plots_by_group: refer to ABCD_GWAS Snakefile, running GENESIS for ancestry PCA, and ancestry-aware kinship estimation
-- make_apex_kin_mat: convert pcrelate RData to kinship sparse matrix for apex, refer to apex documentation for format details
 - factor: generating covarites file from known factors and expression factor analysis implemented in apex. (Note: in current version of apex, if a kin matirix is included, eFA will have to be modeled as fixed effects. If no kin/grm included, eFA still can only be modeled as fixed effects. To model inferred factors as random effects, use --epcs $num_factor and --cov $file_with_known_factor_only)
+- make_apex_kin_mat: convert pcrelate RData to kinship sparse matrix for apex, refer to apex documentation for format details
+
 - cis_lmm_kin: cis-eQTL mapping, mixed ancestry data, lmm with kin as random effects
 - cis_lmm_dtss_kin: specify an alpha for dtss weight
 - cis_ols:
@@ -18,6 +21,7 @@ rules:
 - cis_lmm_dtss_grm:
 
 """
+
 
 rule all:
     input:
@@ -28,20 +32,29 @@ rule all:
         "/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_pc12_by_group.pdf",
         "/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_parcoord_by_group.pdf",
         "/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_pairs_by_group.png",
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp_dtss.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/{num_HCP}hcp_ols.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm_dtss.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
-        
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/fixed_factor{num_factor}.cov.txt.gz",
+            num_factor=np.arange(1, 101, 1),
+        ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/factor{num_factor}_fixed.cov.gz",
+        #     num_factor=np.arange(1, 101, 1),
+        # ),
+        # expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
+        # expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp_dtss.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
+        # expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/{num_HCP}hcp_ols.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi"]),
+        # expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
+        # expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm_dtss.{file}", num_HCP=np.arange(10,101,10), file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"]),
+
+
 rule split_chr_prep_vcf:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz"
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.vcf.gz"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.vcf.gz",
     resources:
         mem_gb=4,
-        time_min=60
+        time_min=60,
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -49,17 +62,18 @@ rule split_chr_prep_vcf:
         bcftools view -r {wildcards.chr_num} {input[0]} -Oz -o {output[0]}
         """
 
+
 rule vcf_to_gds:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.vcf.gz"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.vcf.gz",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.gds"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.gds",
     resources:
         mem_gb=4,
         time_min=60,
-        num_cores=2
+        num_cores=2,
     params:
-        script="./scripts/vcf2gds.R"
+        script="./scripts/vcf2gds.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -70,17 +84,21 @@ rule vcf_to_gds:
             --num_thread {resources.num_cores}
         """
 
+
 rule unique_variant_ids:
     input:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.gds", chr_num=np.arange(1,23))
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.gds",
+            chr_num=np.arange(1, 23),
+        ),
     output:
-        done_file="unique_variant_ids.done"
+        done_file="unique_variant_ids.done",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/unique_variant_ids.R",
-        all_gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr .gds"
+        all_gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr .gds",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -90,23 +108,24 @@ rule unique_variant_ids:
         touch {output.done_file}
         """
 
+
 rule ld_prune:
     input:
         gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.chr{chr_num}.gds",
-	done_file="unique_variant_ids.done"
+        done_file="unique_variant_ids.done",
     output:
-        pruned_gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.chr{chr_num}.gds"
+        pruned_gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.chr{chr_num}.gds",
     resources:
         mem_gb=4,
         time_min=120,
-        num_cores=2
+        num_cores=2,
     params:
         script="./scripts/ld_prune.R",
         genome_build="hg19",
         maf=0.01,
         missing=0.01,
         ld_r=0.32,
-        ld_win_kb=50
+        ld_win_kb=50,
     shell:
         """
          . /u/local/Modules/default/init/modules.sh
@@ -122,17 +141,21 @@ rule ld_prune:
             --num_thread {resources.num_cores}
         """
 
+
 rule merge_gds:
     input:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.chr{chr_num}.gds", chr_num=np.arange(1,23))
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.chr{chr_num}.gds",
+            chr_num=np.arange(1, 23),
+        ),
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/merge_gds.R",
-        gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.chr .gds"
+        gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.chr .gds",
     shell:
         """
          . /u/local/Modules/default/init/modules.sh
@@ -142,17 +165,21 @@ rule merge_gds:
             --merged_gds_file {output[0]}
         """
 
+
 rule gds2bed:
     input:
-        gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds"
+        gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds",
     output:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.{suffix}", suffix=["bed","bim","fam"])
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.{suffix}",
+            suffix=["bed", "bim", "fam"],
+        ),
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/gds2bed.R",
-        prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned"
+        prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned",
     shell:
         """
          . /u/local/Modules/default/init/modules.sh
@@ -162,18 +189,19 @@ rule gds2bed:
             --bed_file {params.prefix}
         """
 
+
 rule king_ibdseg:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.bed"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.bed",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.king.ibdseg.seg.gz"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.king.ibdseg.seg.gz",
     resources:
         mem_gb=4,
         time_min=120,
-        num_cores=2
+        num_cores=2,
     params:
         bed_file_prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned",
-        out_prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.king.ibdseg"
+        out_prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.king.ibdseg",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -196,17 +224,18 @@ rule king_ibdseg:
         gzip {params.out_prefix}.seg
         """
 
+
 rule kinship_plots_ibdseg:
     input:
-        kinship_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.king.ibdseg.seg.gz"
+        kinship_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.king.ibdseg.seg.gz",
     output:
-        out_file="/u/project/gandalm/cindywen/isoform_twas/apex/figures/kin_ibdseg_kinship.pdf"
+        out_file="/u/project/gandalm/cindywen/isoform_twas/apex/figures/kin_ibdseg_kinship.pdf",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/kinship_plots.R",
-        kinship_method="king_ibdseg"
+        kinship_method="king_ibdseg",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -218,20 +247,25 @@ rule kinship_plots_ibdseg:
             --kinship_method {params.kinship_method}
         """
 
+
 rule king_to_matrix:
     input:
         kinship_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.king.ibdseg.seg.gz",
-        keep_id="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        keep_id=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        ),
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_ibdseg_Matrix.RData"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_ibdseg_Matrix.RData",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/king_to_matrix.R",
         kinship_method="king_ibdseg",
-        out_prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_ibdseg_Matrix",
-        sparse_threshold="0.01104854"
+        out_prefix=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_ibdseg_Matrix"
+        ),
+        sparse_threshold="0.01104854",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -245,18 +279,23 @@ rule king_to_matrix:
             --keep_id {input.keep_id}
         """
 
+
 rule ibd_king:
     input:
-        keep_id="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata",
-        gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds"
+        keep_id=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        ),
+        gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds",
     output:
-        out_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_robust.gds"
+        out_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_robust.gds"
+        ),
     resources:
         mem_gb=4,
         num_cores=2,
-        time_min=240
+        time_min=240,
     params:
-        script="./scripts/ibd_king.R"
+        script="./scripts/ibd_king.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -269,19 +308,24 @@ rule ibd_king:
             --num_thread {resources.num_cores}
         """
 
+
 rule kinship_plots_robust:
     input:
-        keep_id="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata",
-        kinship_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_robust.gds"
+        keep_id=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        ),
+        kinship_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_robust.gds"
+        ),
     output:
-        out_file="/u/project/gandalm/cindywen/isoform_twas/apex/figures/king_robust_kinship.pdf"
+        out_file="/u/project/gandalm/cindywen/isoform_twas/apex/figures/king_robust_kinship.pdf",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/kinship_plots.R",
         kinship_method="king",
-        kinship_threshold="0.04419417"
+        kinship_threshold="0.04419417",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -295,21 +339,30 @@ rule kinship_plots_robust:
             --kinship_threshold {params.kinship_threshold}
         """
 
+
 rule find_unrel:
     input:
         kinship_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_ibdseg_Matrix.RData",
-        divergence_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_robust.gds",
-        keep_id="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        divergence_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/king_robust.gds"
+        ),
+        keep_id=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        ),
     output:
-        out_rel_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_rel.RData",
-        out_unrel_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_unrel.RData"
+        out_rel_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_rel.RData"
+        ),
+        out_unrel_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_unrel.RData"
+        ),
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/find_unrel.R",
         kinship_threshold="0.04419417",
-        divergence_threshold="-0.04419417"
+        divergence_threshold="-0.04419417",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -325,22 +378,31 @@ rule find_unrel:
             --keep_id {input.keep_id}
         """
 
+
 rule pca_byrel:
     input:
-        rel_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_rel.RData",
-        unrel_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_unrel.RData",
+        rel_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_rel.RData"
+        ),
+        unrel_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_unrel.RData"
+        ),
         gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds",
-        keep_id="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        keep_id=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        ),
     output:
-        out_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData",
-        out_file_unrel="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair_unrel.RData"
+        out_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData"
+        ),
+        out_file_unrel="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair_unrel.RData",
     resources:
         mem_gb=2,
         time_min=120,
-        num_cores=2
+        num_cores=2,
     params:
-       script="./scripts/pca_byrel.R",
-        n_pcs="32"
+        script="./scripts/pca_byrel.R",
+        n_pcs="32",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -357,21 +419,28 @@ rule pca_byrel:
             --num_thread {resources.num_cores}
         """
 
+
 rule pcrelate_beta:
     input:
         gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds",
-        keep_id="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata",
-        pca_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData"
+        keep_id=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        ),
+        pca_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData"
+        ),
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_isaf_beta.RData"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_isaf_beta.RData",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/pcrelate_beta.R",
-        out_prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_isaf_beta",
+        out_prefix=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_isaf_beta"
+        ),
         n_pcs="10",
-        variant_block_size="1024"
+        variant_block_size="1024",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -386,22 +455,29 @@ rule pcrelate_beta:
             --variant_block_size {params.variant_block_size}
         """
 
+
 rule pcrelate:
     input:
         beta_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_isaf_beta.RData",
         gds_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/filtered.hg19.sorted.pruned.gds",
-        keep_id="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata",
-        pca_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData"
+        keep_id=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_sample_id.Rdata"
+        ),
+        pca_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData"
+        ),
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_block_{block1}_{block2}.RData"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_block_{block1}_{block2}.RData",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/pcrelate.R",
-        out_prefix= "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate",
+        out_prefix=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate"
+        ),
         n_pcs="10",
-        variant_block_size="1024"
+        variant_block_size="1024",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -420,19 +496,28 @@ rule pcrelate:
             --block2 {wildcards.block2}
         """
 
+
 rule pcrelate_correct:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_block_{}_{}.RData".format(block1,block2) for block1 in range(1,config["N_SAMPLE_BLOCKS"] + 1) for block2 in range(block1,config["N_SAMPLE_BLOCKS"] + 1)
+        (
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_block_{}_{}.RData".format(
+                block1, block2
+            )
+            for block1 in range(1, config["N_SAMPLE_BLOCKS"] + 1)
+            for block2 in range(block1, config["N_SAMPLE_BLOCKS"] + 1)
+        ),
     output:
         "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate.RData",
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_Matrix.RData"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_Matrix.RData",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/pcrelate_correct.R",
-        pcrelate_prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate",
-        sparse_threshold="0.01104854"
+        pcrelate_prefix=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate"
+        ),
+        sparse_threshold="0.01104854",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -444,17 +529,20 @@ rule pcrelate_correct:
             --n_sample_blocks {config[N_SAMPLE_BLOCKS]}
         """
 
+
 rule kinship_plots_pcrelate:
     input:
-        kinship_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate.RData"
+        kinship_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate.RData",
     output:
-        out_file="/u/project/gandalm/cindywen/isoform_twas/apex/figures/pcrelate_kinship.pdf"
+        out_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/figures/pcrelate_kinship.pdf"
+        ),
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/kinship_plots.R",
-        kinship_method="pcrelate"
+        kinship_method="pcrelate",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -466,42 +554,50 @@ rule kinship_plots_pcrelate:
             --kinship_method {params.kinship_method}
         """
 
+
 rule make_pheno_file_dummy:
     input:
-        ancestry="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/ancestry_list/ancestry.tsv"
+        ancestry="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/ancestry_list/ancestry.tsv",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_dummy_annot.RData"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_dummy_annot.RData",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
-        script="./scripts/make_pheno_file_dummy.R"
+        script="./scripts/make_pheno_file_dummy.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        
+
         Rscript {params.script} \
             --ancestry {input.ancestry} \
             --out_file {output[0]}
         """
 
+
 rule pca_plots_by_group:
     input:
-        pca_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData",
-        phenotype_file="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_dummy_annot.RData"
+        pca_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcair.RData"
+        ),
+        phenotype_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_dummy_annot.RData"
+        ),
     output:
-        out_file_scree="/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_scree.pdf",
+        out_file_scree=(
+            "/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_scree.pdf"
+        ),
         out_file_pc12="/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_pc12_by_group.pdf",
         out_file_parcoord="/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_parcoord_by_group.pdf",
-        out_file_pairs="/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_pairs_by_group.png"
+        out_file_pairs="/u/project/gandalm/cindywen/isoform_twas/apex/figures/pca_pairs_by_group.png",
     resources:
         mem_gb=4,
-        time_min=120
+        time_min=120,
     params:
         script="./scripts/pca_plots_by_group.R",
         n_pairs="12",
-        group="ethnicity"
+        group="ethnicity",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -516,41 +612,23 @@ rule pca_plots_by_group:
             --n_pairs {params.n_pairs} \
             --phenotype_file {input.phenotype_file} \
             --group {params.group}
-        """ 
-
-rule make_apex_kin_mat:
-    input:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate.RData"
-    output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_kin.txt"
-    resources:
-        mem_gb=4,
-        time_min=120
-    params:
-        script="./scripts/make_apex_kin_mat.R"
-    shell:
-        """
-        . /u/local/Modules/default/init/modules.sh
-        module load R/3.6.0
-
-        Rscript {params.script} \
-            --pcrel {input[0]} \
-            --out {output[0]}
         """
 
+
+################# APEX #################
 rule factor:
     input:
         known="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_known_cov.txt",
         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
-        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz"
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/factor{num_factor}.cov.gz"
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/factor{num_factor}.cov.gz",
     params:
         prefix="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/factor{num_factor}",
-        outdir="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/"
+        outdir="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/",
     resources:
         mem_gb=4,
-        time_min=60
+        time_min=60,
     shell:
         """
         mkdir -p {params.outdir}
@@ -563,169 +641,217 @@ rule factor:
             --factors {wildcards.num_factor}
         """
 
-# TODO: solve eFA questions; now using covaraites with HCP; F-0, M-1
-rule cis_lmm_kin:
-    input:
-        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
-        kin="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_kin.txt"
-    output:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{{num_HCP}}hcp.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
-    resources:
-        mem_gb=4,
-        time_min=120,
-        num_cores=6
-    params:
-        outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/",
-        prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp"
-    shell:
-        """
-        mkdir -p {params.outdir}
-        {config[APEX]} cis \
-            --vcf {input.geno} \
-            --bed {input.expr} \
-            --cov {input.cov} \
-            --kin {input.kin} \
-	    --prefix {params.prefix} \
-            --window 1000000 \
-            --long \
-            --threads {resources.num_cores}
-        """
 
-rule cis_lmm_dtss_kin:
+# There is a bug in the current version apex factor
+rule fix_factor:
     input:
-        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
-        kin="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_kin.txt"
+        known="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_known_cov.txt",
+        factor="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/factor{num_factor}.cov.gz",
     output:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{{num_HCP}}hcp_dtss.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
+        "/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/fixed_factor{num_factor}.cov.txt.gz",
+    params:
+        script="scripts/fix_factor.R",
+        outfile="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_efa/fixed_factor{num_factor}.cov.txt",
     resources:
         mem_gb=4,
-        time_min=120,
-        num_cores=6
-    params:
-        outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/",
-        prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp_dtss"
-    shell:
-        """
-        mkdir -p {params.outdir}
-        {config[APEX]} cis \
-            --vcf {input.geno} \
-            --bed {input.expr} \
-            --cov {input.cov} \
-            --kin {input.kin} \
-	    --prefix {params.prefix} \
-            --window 1000000 \
-            --long \
-            --threads {resources.num_cores} \
-            --dtss-weight 1e-5
-        """
-
-rule cis_ols:
-    input:
-        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt"
-    output:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/{{num_HCP}}hcp_ols.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi"])
-    resources:
-        mem_gb=4,
-        time_min=120,
-        num_cores=4
-    params:
-        outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/",
-        prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/{num_HCP}hcp_ols"
-    shell:
-        """
-        mkdir -p {params.outdir}
-        {config[APEX]} cis \
-            --vcf {input.geno} \
-            --bed {input.expr} \
-            --cov {input.cov} \
-	    --prefix {params.prefix} \
-            --window 1000000 \
-            --long \
-            --threads {resources.num_cores}
-        """
-
-# TODO: cis-lmm and cis-lmm-dtss with --kin results don't seem right
-rule make_apex_grm_mat:
-    input:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_Matrix.RData"
-    output:
-        "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_grm.txt"
-    resources:
-        mem_gb=4,
-        time_min=60
-    params:
-        script="./scripts/make_apex_grm.R"
+        time_min=60,
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
         Rscript {params.script} \
-            --pcrel {input[0]} \
-            --out {output[0]}
+            --known {input.known} \
+            --factor {input.factor} \
+            --outfile {params.outfile} 
+        gzip {params.outfile}
         """
 
-rule cis_lmm_grm:
-    input:
-        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
-        grm="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_grm.txt"
-    output:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{{num_HCP}}hcp_grm.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
-    resources:
-        mem_gb=6,
-        time_min=150,
-        num_cores=8
-    params:
-        outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/",
-        prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm"
-    shell:
-        """
-        mkdir -p {params.outdir}
-        {config[APEX]} cis \
-            --vcf {input.geno} \
-            --bed {input.expr} \
-            --cov {input.cov} \
-            --grm {input.grm} \
-	    --prefix {params.prefix} \
-            --window 1000000 \
-            --long \
-            --threads {resources.num_cores}
-        """
 
-rule cis_lmm_dtss_grm:
-    input:
-        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
-        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
-        grm="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_grm.txt"
-    output:
-        expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{{num_HCP}}hcp_grm_dtss.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
-    resources:
-        mem_gb=6,
-        time_min=150,
-        num_cores=6
-    params:
-        outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/",
-        prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm_dtss"
-    shell:
-        """
-        mkdir -p {params.outdir}
-        {config[APEX]} cis \
-            --vcf {input.geno} \
-            --bed {input.expr} \
-            --cov {input.cov} \
-            --grm {input.grm} \
-	    --prefix {params.prefix} \
-            --window 1000000 \
-            --long \
-            --threads {resources.num_cores} \
-            --dtss-weight 1e-5
-        """
+# rule make_apex_kin_mat:
+#     input:
+#         "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate.RData"
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_kin.txt"
+#     resources:
+#         mem_gb=4,
+#         time_min=120
+#     params:
+#         script="./scripts/make_apex_kin_mat.R"
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/3.6.0
+
+#         Rscript {params.script} \
+#             --pcrel {input[0]} \
+#             --out {output[0]}
+#         """
+
+
+# # TODO: solve eFA questions; now using covaraites with HCP; F-0, M-1
+# rule cis_lmm_kin:
+#     input:
+#         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+#         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
+#         cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
+#         kin="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_kin.txt"
+#     output:
+#         expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{{num_HCP}}hcp.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
+#     resources:
+#         mem_gb=4,
+#         time_min=120,
+#         num_cores=6
+#     params:
+#         outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/",
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp"
+#     shell:
+#         """
+#         mkdir -p {params.outdir}
+#         {config[APEX]} cis \
+#             --vcf {input.geno} \
+#             --bed {input.expr} \
+#             --cov {input.cov} \
+#             --kin {input.kin} \
+# 	    --prefix {params.prefix} \
+#             --window 1000000 \
+#             --long \
+#             --threads {resources.num_cores}
+#         """
+
+# rule cis_lmm_dtss_kin:
+#     input:
+#         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+#         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
+#         cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
+#         kin="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_kin.txt"
+#     output:
+#         expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{{num_HCP}}hcp_dtss.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
+#     resources:
+#         mem_gb=4,
+#         time_min=120,
+#         num_cores=6
+#     params:
+#         outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/",
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_kin/{num_HCP}hcp_dtss"
+#     shell:
+#         """
+#         mkdir -p {params.outdir}
+#         {config[APEX]} cis \
+#             --vcf {input.geno} \
+#             --bed {input.expr} \
+#             --cov {input.cov} \
+#             --kin {input.kin} \
+# 	    --prefix {params.prefix} \
+#             --window 1000000 \
+#             --long \
+#             --threads {resources.num_cores} \
+#             --dtss-weight 1e-5
+#         """
+
+# rule cis_ols:
+#     input:
+#         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+#         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
+#         cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt"
+#     output:
+#         expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/{{num_HCP}}hcp_ols.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi"])
+#     resources:
+#         mem_gb=4,
+#         time_min=120,
+#         num_cores=4
+#     params:
+#         outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/",
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_ols/{num_HCP}hcp_ols"
+#     shell:
+#         """
+#         mkdir -p {params.outdir}
+#         {config[APEX]} cis \
+#             --vcf {input.geno} \
+#             --bed {input.expr} \
+#             --cov {input.cov} \
+# 	    --prefix {params.prefix} \
+#             --window 1000000 \
+#             --long \
+#             --threads {resources.num_cores}
+#         """
+
+# # TODO: cis-lmm and cis-lmm-dtss with --kin results don't seem right
+# rule make_apex_grm_mat:
+#     input:
+#         "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_Matrix.RData"
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_grm.txt"
+#     resources:
+#         mem_gb=4,
+#         time_min=60
+#     params:
+#         script="./scripts/make_apex_grm.R"
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/3.6.0
+
+#         Rscript {params.script} \
+#             --pcrel {input[0]} \
+#             --out {output[0]}
+#         """
+
+# rule cis_lmm_grm:
+#     input:
+#         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+#         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
+#         cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
+#         grm="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_grm.txt"
+#     output:
+#         expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{{num_HCP}}hcp_grm.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
+#     resources:
+#         mem_gb=6,
+#         time_min=150,
+#         num_cores=8
+#     params:
+#         outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/",
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm"
+#     shell:
+#         """
+#         mkdir -p {params.outdir}
+#         {config[APEX]} cis \
+#             --vcf {input.geno} \
+#             --bed {input.expr} \
+#             --cov {input.cov} \
+#             --grm {input.grm} \
+# 	    --prefix {params.prefix} \
+#             --window 1000000 \
+#             --long \
+#             --threads {resources.num_cores}
+#         """
+
+# rule cis_lmm_dtss_grm:
+#     input:
+#         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+#         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
+#         cov="/u/project/gandalm/cindywen/isoform_twas/apex/data/mixed_gene_hcp_cov/{num_HCP}hcp_cov.txt",
+#         grm="/u/project/gandalm/cindywen/isoform_twas/apex/data/geno/mixed_pcrelate_grm.txt"
+#     output:
+#         expand("/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{{num_HCP}}hcp_grm_dtss.{file}", file=["cis_sumstats.txt.gz", "cis_gene_table.txt.gz", "cis_long_table.txt.gz", "cis_sumstats.txt.gz.csi", "cis_gene_table.txt.gz.csi", "theta.gz"])
+#     resources:
+#         mem_gb=6,
+#         time_min=150,
+#         num_cores=6
+#     params:
+#         outdir="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/",
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/apex/output/mixed_gene_cis_lmm_grm/{num_HCP}hcp_grm_dtss"
+#     shell:
+#         """
+#         mkdir -p {params.outdir}
+#         {config[APEX]} cis \
+#             --vcf {input.geno} \
+#             --bed {input.expr} \
+#             --cov {input.cov} \
+#             --grm {input.grm} \
+# 	    --prefix {params.prefix} \
+#             --window 1000000 \
+#             --long \
+#             --threads {resources.num_cores} \
+#             --dtss-weight 1e-5
+#         """

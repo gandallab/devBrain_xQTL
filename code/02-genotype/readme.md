@@ -8,9 +8,9 @@
 ## Post-imputation
 - Scripts in `prelim/`: inputs are imputed genotype files downloaded from Michigan Imputation server; concatenate by chromosomes, index, filter by R2, and take the **intersection** of high impute quality variants across datasets
 - Note: except for Walker data, we applied R2>.3 filter during imputation; so here we only applied R2>.3 on Walker imputed data and intersected with the other datasets
-- ancestry.ipynb: infer data ancestry, make plots
-- IBD.ipynb: relatedness check
-- Snakefile rules description:
+- `ancestry.ipynb`: infer data ancestry, make plots
+- `IBD.ipynb`: relatedness check
+- `Snakefile`:
 ```
 rules:
 - walker_subj: remove 4 walker subjects that are not in rnaseq

@@ -25,6 +25,6 @@ fi
 OUTDIR=/u/project/gandalm/cindywen/isoform_twas/sqtl_new/junc
 mkdir -p ${OUTDIR}
 
-SCRIPT=/u/project/gandalm/cindywen/isoform_twas/sqtl/leafcutter/scripts/bam2junc.sh
+SCRIPT=/u/project/gandalm/shared/apps/leafcutter/scripts/bam2junc.sh
 bash ${SCRIPT} ${BAM_FILE} ${OUTDIR}/${BAM_FILE_NAME}.junc
 echo ${OUTDIR}/${BAM_FILE_NAME}.junc >> juncfiles.txt

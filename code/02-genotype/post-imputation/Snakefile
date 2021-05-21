@@ -77,7 +77,8 @@ rule reheader:
         bcftools reheader -s {input.header} {input.vcf} -o {output[0]}
         tabix -p vcf {output[0]}
         """
-
+# could have used --keep-allele-order or plink2
+# now variants with ALT as major in the data got REF/ALT swapped (plink1.9 default), and excluded in crossmap (with tag REF==ALT in unmap file) 
 rule convert_to_plink:
     input:
         vcf=config["GENO_DIR"]+"ancestry/merge.reheader.vcf.gz"
