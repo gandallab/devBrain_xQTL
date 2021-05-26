@@ -143,7 +143,12 @@ for( clu in clusters ){
         counter <- counter + 1
       }
     }
-    cluster_ensemblID <- unique(tprime %>% filter(gene == cluster_gene) %>% select(gene_id))$gene_id
+    # this gene can be from either tprime or fprime
+    # note some genes (very few, an example is C2orf27A)have more than one ensemblID
+    # then the code will match intron cluster to the correct ensemblID it matches
+    cluster_ensemblID <- unique(unlist(c(
+      fprime %>% filter(gene == cluster_gene) %>% select(gene_id), 
+      tprime %>% filter(gene == cluster_gene) %>% select(gene_id))))
   } else {
     cluster_ensemblID <- "."
   }
@@ -168,6 +173,10 @@ for( clu in clusters ){
     bothSS_intron <- cluster[intron,] %>% left_join(bothSSClu, by=c("chr","start","end"))
 
     # for each intron create vector of all transcripts that contain both splice sites
+    # if one df has non-NA transcripts, the other all NA, will give ''
+    # if both df have all NA transcripts, will give NA
+    # in summarise_annot.R, '' is converted to '.'
+    # so in the final output there are '.' and NA
     transcripts[[intron]] <- intersect( tprime_intron$transcript,fprime_intron$transcript )
 
     verdict[intron] <- "error"
