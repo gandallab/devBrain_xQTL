@@ -9,7 +9,8 @@ argp <- add_argument(argp, "--out", help="Output file, in apex format")
 argv <- parse_args(argp)
 
 # Matrix.RData is made using GENESIS::pcrelateToMatrix with scaleKin = 2
-
+# it contains all subject pairs, including id1==id2
+# if removing all diagonal pairs (id1 == id2), Matrix.RData has the same number of subject pairs as pcrelobj$kinBtwn (passing kinship threshold)
 load(argv$pcrel)
 df <- as.data.frame(summary(km))
 for(row in 1:nrow(df)){

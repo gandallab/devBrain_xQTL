@@ -7,42 +7,46 @@
 - `Snakefile`
 ```
 rules:
-prep:
-    expr_prep: expression filter, VST normalization, outlier detection, ComBat, create bed file
-    ancestry_expr: subset ancestries
-    cov: generate covariates files
-    ancestry_cov
-nominal pass:
-    fastqtl_nominal
-    ancestry_fastqtl_nominal
-    call_nominal: identify significant nominal associations
-    ancestry_call_nominal
-permutation pass:
-    fastqtl_perm
-    ancestry_fastqtl_perm
-    call_perm
-    ancestry_call_perm
-conditional pass:
-    permutations_all_threshold: compute a npval threshold for all expressed genes
-    conditional
-    get_top_variants
-susie finemapping:
-    vcf_to_dosage
-    make_susie_meta
-    make_susie_expr
-    run_susie
-    merge_susie
-    sort_susie
-cell type/group interaction:
-    make_decon_dosage
-    snps_to_test
-    fix_decon_dosage
-    run_decon_qtl
-cell type/group specific:
-    bgzip_tabix
-    cg_cov
-    cg_fastqtl_nominal
-    cg_call_nominal
+prep
+    - expr_prep: expression filter, VST normalization, outlier detection, ComBat, create bed file
+    - ancestry_expr: subset ancestries
+    - cov: generate covariates files
+    - ancestry_cov
+nominal pass
+    - fastqtl_nominal
+    - ancestry_fastqtl_nominal
+    - merge_nominal
+    - ancestry_merge_nominal
+    - call_nominal: identify significant nominal associations
+    - ancestry_call_nominal
+permutation pass
+    - fastqtl_perm
+    - ancestry_fastqtl_perm
+    - merge_perm
+    - ancestry_merge_perm
+    - call_perm
+    - ancestry_call_perm
+conditional pass
+    - permutations_all_threshold: compute a npval threshold for all expressed genes
+    - conditional
+    - get_top_variants
+susie finemapping
+    - vcf_to_dosage
+    - make_susie_meta
+    - make_susie_expr
+    - run_susie
+    - merge_susie
+    - sort_susie
+cell type/group interaction
+    - make_decon_dosage
+    - snps_to_test
+    - fix_decon_dosage
+    - run_decon_qtl
+cell type/group specific
+    - bgzip_tabix
+    - cg_cov
+    - cg_fastqtl_nominal
+    - cg_call_nominal
 ```
 ## cis-isoQTL
 - `isoqtl_analysis.ipynb`
@@ -65,21 +69,36 @@ Leafcutter combined ancestry
     - pheno_process
     - cov
     - fastqtl_nominal
+    - merge_nominal
     - call_nominal
     - fastqtl_perm
+    - merge_perm
     - call_perm
 Separate ancestry
     - ancestry_pheno
     - ancestry_cov
     - ancestry_fastqtl_nominal
+    - ancestry_merge_nominal
     - ancestry_call_nominal
     - ancestry_fastqtl_perm
+    - ancestry_merge_perm
     - ancestry_call_perm
 Intron annotation
     - prepare_leafviz_annot
     - map_clusters_to_genes
     - annotate_intron
     - summarise_annot
+Conditional 
+    - permutations_all_threshold: compute a npval threshold for all tested introns
+    - conditional: run QTLtools conditional pass
+    - get_top_variants: get top variants per rank
+susie finemapping
+    - vcf_to_dosage
+    - make_susie_meta
+    - make_susie_expr
+    - run_susie
+    - merge_susie
+    - sort_susie
 ```
 ## trans
 ## APEX
@@ -87,15 +106,19 @@ Intron annotation
 - `Snakefile`:
 ```
 rules:
-- From split_chr_prep_vcf to pca_plots_by_group: run GENESIS for ancestry PCA, and ancestry-aware kinship estimation
-- make_apex_kin_mat: convert pcrelate RData to kinship sparse matrix for apex, refer to apex documentation for format details
-- factor: generating covarites file from known factors and expression factor analysis implemented in apex. (Note: in current version of apex, if a kin matirix is included, eFA will have to be modeled as fixed effects. If no kin/grm included, eFA still can only be modeled as fixed effects. To model inferred factors as random effects, use --epcs $num_factor and --cov $file_with_known_factor_only)
-- cis_lmm_kin: cis-eQTL mapping, mixed ancestry data, lmm with kin as random effects
-- cis_lmm_dtss_kin: specify an alpha for dtss weight
-- cis_ols
-- make_apex_grm_mat
-- cis_lmm_grm
-- cis_lmm_dtss_grm
+GENESIS
+    - From split_chr_prep_vcf to pca_plots_by_group: refer to ABCD_GWAS Snakefile, running GENESIS for ancestry PCA, and ancestry-aware kinship estimation
+APEX OLS mapping
+    - factor: generating covarites file from known factors and expression factor analysis implemented in apex. (Note: in current version of apex, if a kin matirix is included, eFA will have to be modeled as fixed effects. If no kin/grm included, eFA still can only be modeled as fixed effects. To model inferred factors as random effects, use --epcs $num_factor and --cov $file_with_known_factor_only)
+    - cis_ols
+APEX LMM mapping with kin
+    - make_apex_kin_mat: convert pcrelate RData to kinship sparse matrix for apex, refer to apex documentation for format details
+    - cis_lmm_kin: cis-eQTL mapping, mixed ancestry data, lmm with kin as random effects
+    - cis_lmm_dtss_kin: specify an alpha for dtss weight
+APEX LMM mapping with grm
+    - make_apex_grm_mat 
+    - cis_lmm_grm
+    - cis_lmm_dtss_grm
 ```
 
   

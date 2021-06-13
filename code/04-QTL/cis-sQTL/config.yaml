@@ -1,5 +1,13 @@
+# softwares
 STAR: "/u/project/gandalm/cindywen/isoform_twas/star/STAR-2.7.3a/bin/Linux_x86_64_static/STAR"
-GENOME_FASTA: "/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome.fa"
-GTF_FILE: "/u/project/gandalm/shared/refGenomes/hg19/Gencode/v33/gencode.v33lift37.annotation.gtf"
 FASTQTL: "/u/project/gandalm/shared/apps/FastQTL/bin/fastQTL.static"
 LEAFCUTTER: "/u/project/gandalm/shared/apps/leafcutter/"
+QTLTOOLS: "/u/project/gandalm/shared/apps/QTLtools_1.0/QTLtools_1.0_CentOS6.8_x86_64"
+CSVTK: "/u/project/gandalm/shared/apps/csvtk"
+
+# files
+GENOME_FASTA: "/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome.fa"
+GTF_FILE: "/u/project/gandalm/shared/refGenomes/hg19/Gencode/v33/gencode.v33lift37.annotation.gtf"
+
+# params
+SUSIE_N_BATCH: "500"

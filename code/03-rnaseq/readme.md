@@ -3,6 +3,11 @@
 -   Alignment [STAR-2.7.3a](https://github.com/alexdobin/STAR); index with [GENCODE v29lift37](https://www.gencodegenes.org/) genome and annotation; note there is a new run of STAR for sQTL
 -   Alignment QC [PicardTools 2.21.7](https://github.com/broadinstitute/picard)
 -   Compile FastQC and PicardTools metrics [MultiQC v1.9.dev0](https://github.com/ewels/MultiQC)
+```
+# In picard/
+# -d -dd 1: to keep identical sample ID from different folders
+python3 -m multiqc -d -dd 1 Walker/ Obrien Werling_final/ hdbr libd -o all_multiqc
+```
 -   Quantification [Salmon v1.1.0](https://salmon.readthedocs.io/en/latest/); [GENCODE v33lift37](https://www.gencodegenes.org/) decoys-aware index
 -   Compile and import quantifications [Tximport 1.14.0](https://bioconductor.org/packages/devel/bioc/vignettes/tximport/inst/doc/tximport.html)
 

@@ -3,7 +3,7 @@
 # Adapted from https://github.com/francois-a/fastqtl/blob/master/R/calculateSignificanceFastQTL.R
 # and https://github.com/hobrien/GENEX-FB2/blob/master/R/calulateNominalPvalueThresholds.R
 
-# Call egene/isotx/sintron(sqtl) form FastQTL permutation pass
+# Call egene/isotx/sintron form FastQTL permutation pass
 # and calculate nominal p-val threshold for qtl of each feature
 
 suppressMessages(library(argparser))
@@ -51,5 +51,5 @@ sig_pheno <- filter(results, qval < .05)
 
 # See OBrien code for adjusting nominal pval threshold for those genes whose best npval is larger than the threshold
 # Note we only call eQTL for eGenes, so it's mediated
-
+write.table(results, paste0(args$outdir, "all_assoc.txt"), quote=F, sep="\t", col.names=T, row.names=F)
 write.table(sig_pheno, paste0(args$outdir, "sig_pheno.txt"), quote=F, sep="\t", col.names=T, row.names=F)
