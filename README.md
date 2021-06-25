@@ -1,4 +1,4 @@
-# Fetal brain mega QTL (05-26-2021)
+# Fetal brain mega QTL
 ### Quantifications
 #### Gene (`working/gene/`)
 - [x] Estimated counts (`"countsFromAbundance="lengthScaledTPM"`): `gene.noVersion.scaled.counts.tsv`

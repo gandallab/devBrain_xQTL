@@ -37,6 +37,8 @@ susie finemapping
     - run_susie
     - merge_susie
     - sort_susie
+susie finemapping ancsetry
+    ...as above
 cell type/group interaction
     - make_decon_dosage
     - snps_to_test
@@ -47,6 +49,8 @@ cell type/group specific
     - cg_cov
     - cg_fastqtl_nominal
     - cg_call_nominal
+
+    - make_effect_size_scatter_eur_amr, eur_afr, afr_amr
 ```
 ## cis-isoQTL
 - `isoqtl_analysis.ipynb`
@@ -119,6 +123,8 @@ APEX LMM mapping with grm
     - make_apex_grm_mat 
     - cis_lmm_grm
     - cis_lmm_dtss_grm
+APEX trans
+    - trans_ols
 ```
 
   

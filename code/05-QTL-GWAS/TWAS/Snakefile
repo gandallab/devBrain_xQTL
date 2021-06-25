@@ -18,34 +18,36 @@ rules:
 - concat_extract
 """
 
+ANCESTRY = ['eur', 'amr', 'afr']
 
 rule all:
     input:
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.{chr_num}.{suffix}",
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.{chr_num}.{suffix}",
             suffix=["bed", "bim", "fam", "log"],
             chr_num=np.arange(1, 23, 1),
+            ancestry=ANCESTRY
         ),
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/hsq/concat_hsq.txt",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/models_sum.txt",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/models_log",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/assoc/PGC.SCZ.all.chr",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/assoc/PGC.SCZ.all.chr.sig",
+        # "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/hsq/concat_hsq.txt",
+        # "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/models_sum.txt",
+        # "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/models_log",
+        # "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/assoc/PGC.SCZ.all.chr",
+        # "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/assoc/PGC.SCZ.all.chr.sig",
 
 
 rule make_plink:
     input:
-        vcf="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+        vcf="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
     output:
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.{{chr_num}}.{suffix}",
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{{ancestry}}/filtered.hg19.sorted.removeGeneOutlier.{{chr_num}}.{suffix}",
             suffix=["bed", "bim", "fam", "log"],
         ),
     resources:
         mem_gb=4,
         time_min=60,
     params:
-        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.{chr_num}",
+        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.{chr_num}",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -60,20 +62,20 @@ rule make_plink:
 
 rule compute_weights:
     input:
-        GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/eur_gene_exp_regressed_50hcp.txt",
+        GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/{ancestry}_gene_exp_regressed.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_eur_{start}_{end}.done",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/hsq/{start}_{end}.hsq",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_{ancestry}_{start}_{end}.done",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}/hsq/{start}_{end}.hsq",
         directory(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/hsq/{start}_{end}"
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}/hsq/{start}_{end}"
         ),
     resources:
         mem_gb=4,
         time_min=360,
-        num_cores=4,
+        num_cores=6,
     params:
-        WORK_DIR="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_eur/",
-        GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier",
+        WORK_DIR="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}/",
+        GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier",
         OUT_DIR="WEIGHTS",
         BATCH_START="{start}",
         BATCH_END="{end}",
@@ -136,8 +138,9 @@ rule compute_weights:
             --verbose 2 \
             --save_hsq \
             --PATH_gcta {config[GCTA]} \
-            --models top1,enet,susie \
+            --models top1,enet,susie,lasso,blup,bslmm \
             --PATH_plink {config[PLINK]} \
+            --PATH_gemma {config[GEMMA]} \
             --plink_threads {resources.num_cores}
 
         # Append heritability output to hsq file
