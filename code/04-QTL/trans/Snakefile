@@ -1,0 +1,320 @@
+import pandas as pd
+
+
+configfile: "config.yaml"
+
+
+samples = pd.read_table(config["samples"]).set_index("sample", drop=False)
+
+CHRS = "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22".split()
+SUBS = "1 2 3 4 5 6 7 8 9 10".split()
+
+"""
+rules:
+- filter (input BAM already passed the filters)
+- count: run featureCounts
+- rdata: generate rdata with all sample featureCounts, CPM filter, quantile normalize TPM (gene and sample), standardize
+- make_geno
+- cvBLUP
+- move
+- pearsonR
+- cor: use cal_cor_covar.txt to include covariates and to combine with supervised SVA; not using script cal_cor.R
+- pval
+- qval
+- sig
+"""
+
+
+rule all:
+    input:
+        expand(config["trans_DIR"] + "chr{chr}_sig_fdr10_genepairs.txt", chr=CHRS),
+
+
+# rule filter:
+#     input:
+#         config["BAM_DIR"] + "{sample}.STARAligned.sortedByCoord.WASPfiltered.out.bam",
+#     output:
+#         config["BAM_OUT"] + "{sample}.STARAligned.sortedByCoord.WASPfiltered.out.bam",
+#     resources:
+#         mem_gb=4,
+#         time_min=240,
+#     shell:
+#         config["python_DIR"] + "python " + config[
+#             "tool_DIR"
+#         ] + "pysam_filter.py --bfile {input} --outdir " + config["BAM_OUT"]
+
+
+rule count:
+    input:
+        config["BAM_DIR"] + "{sample}.STARAligned.sortedByCoord.WASPfiltered.out.bam",
+    output:
+        config["count_DIR"] + "{sample}.count.txt",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    shell:
+        """
+        mkdir -p {config[count_DIR]}
+        {config[tool_DIR]}featureCounts \
+            -t exon \
+            -g gene_id \
+            -a {config[gtf_FILE]} \
+            -o {output} {input}
+        """
+
+
+rule rdata:
+    input:
+        expand(config["count_DIR"] + "{sample}.count.txt", sample=samples.index),
+    output:
+        config["trans_DIR"] + "my.rdata",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    params:
+        gene_count=62486,
+        subj_count=640,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        mkdir -p {config[trans_DIR]}
+        Rscript {config[tool_DIR]}get_rdata.R \
+            --count_dir {config[count_DIR]} \
+            --gene_count {params.gene_count} \
+            --subj_count {params.subj_count} \
+            --out {output[0]}
+        """
+
+
+rule sva:
+    input:
+        config["trans_DIR"] + "my.rdata",
+    output:
+        config["trans_DIR"] + "gene_pos.txt",
+        config["trans_DIR"] + "sva.txt",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {config[tool_DIR]}get_gen_pos.R \
+            {input} \
+            {config[count_DIR]} \
+            {config[trans_DIR]}
+        Rscript {config[tool_DIR]}sva.R \
+            {input} \
+            {output[1]} \
+            {config[num_sv]} \
+            {config[tool_DIR]}
+        """
+
+
+rule make_geno:
+    input:
+        config["genotype_DIR"] + "filtered.hg19.sorted.removeRel.vcf.gz",
+    output:
+        expand(
+            config["genotype_DIR"] + "chr{{chr}}.{file}",
+            file=["bed", "bim", "fam", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=240,
+    params:
+        prefix=config["genotype_DIR"] + "chr{chr}",
+    shell:
+        """
+        mkdir -p {config[genotype_DIR]}
+        {config[plink2]} --vcf {input} \
+            --keep {config[samples2]} \
+            --chr {wildcards.chr} \
+            --make-bed \
+            --out {params.prefix} \
+            --allow-no-sex \
+            --indiv-sort f {config[samples2]}
+        """
+
+
+rule cvBLUP:
+    input:
+        config["trans_DIR"] + "../data/cov.txt",
+        config["trans_DIR"] + "gene_pos.txt",
+        config["trans_DIR"] + "sva.txt",
+        expand(
+            config["genotype_DIR"] + "chr{chr}.{file}",
+            file=["bed", "bim", "fam", "log"],
+            chr=CHRS,
+        ),
+    output:
+        expand(
+            "chr{{chr}}_sub{{sub}}{file}",
+            file=[".txt", "_perm_h2g.txt"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    params:
+        chr="{chr}",
+        sub="{sub}",
+        cis_window=1000000,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {config[tool_DIR]}cal_goos_fix_chr.R \
+            {params.chr} \
+            {params.sub} \
+            {config[trans_DIR]}gene_pos.txt \
+            {config[genotype_DIR]} \
+            {config[trans_DIR]}my.rdata \
+            {config[trans_DIR]}sva.txt \
+            {input[0]} \
+            {config[tool_DIR]} \
+            {output[0]} \
+            {config[samples3]} \
+            {params.cis_window}
+        # Remove if exist
+        rm -f chr{params.chr}_sub{params.sub}.ped
+        rm -f chr{params.chr}_sub{params.sub}.map
+        rm -f chr{params.chr}_sub{params.sub}.log
+        rm -f chr{params.chr}_sub{params.sub}.nosex
+        """
+
+
+rule move:
+    input:
+        expand(
+            "chr{chr}_sub{sub}{file}",
+            file=[".txt", "_perm_h2g.txt"],
+            chr=CHRS,
+            sub=SUBS,
+        ),
+    output:
+        expand(
+            config["trans_DIR"] + "chr{chr}_sub{sub}{file}",
+            file=[".txt", "_perm_h2g.txt"],
+            chr=CHRS,
+            sub=SUBS,
+        ),
+    resources:
+        mem_gb=4,
+        time_min=240,
+    shell:
+        """
+        mv chr*_sub* {config[trans_DIR]}
+        """
+
+
+rule pearsonR:
+    input:
+        config["trans_DIR"] + "chr{chr}_sub{sub}.txt",
+    output:
+        config["trans_DIR"] + "pearsonR_chr{chr}_sub{sub}.txt",
+    resources:
+        mem_gb=4,
+        time_min=240,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {config[tool_DIR]}cal_pearsonR.R \
+            {input} \
+            {output} \
+            {config[trans_DIR]}my.rdata
+        """
+
+
+rule cor:
+    input:
+        config["trans_DIR"] + "pearsonR_chr{chr}_sub{sub}.txt",
+    output:
+        config["trans_DIR"] + "cor_chr{chr}_sub{sub}.txt",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    params:
+        chr="{chr}",
+        sub="{sub}",
+        pr_thres=0.01,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {config[tool_DIR]}cal_cor_covar.R \
+            {params.chr} \
+            {params.sub} \
+            {input} \
+            {output} \
+            {config[trans_DIR]}my.rdata \
+            {config[trans_DIR]}chr{params.chr}_sub{params.sub}.txt \
+            {config[tool_DIR]} \
+            {config[trans_DIR]} \
+            {config[trans_DIR]}../data/cov.txt \
+            {params.pr_thres}
+        """
+
+
+rule pval:
+    input:
+        expand(config["trans_DIR"] + "cor_chr{{chr}}_sub{sub}.txt", sub=SUBS),
+    output:
+        config["trans_DIR"] + "chr{chr}_allp_h2g_filtered_interchrom.txt",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    params:
+        chr="{chr}",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {config[tool_DIR]}get_pval_trans_perm_interchrom.R \
+            {params.chr} \
+            {config[trans_DIR]}
+        """
+
+
+rule qval:
+    input:
+        expand(
+            config["trans_DIR"] + "chr{chr}_allp_h2g_filtered_interchrom.txt", chr=CHRS
+        ),
+    output:
+        "log_residQN_h2g",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {config[tool_DIR]}cal_qval.R \
+            {config[trans_DIR]} > {output}
+        """
+
+
+rule sig:
+    input:
+        "log_residQN_h2g",
+    output:
+        config["trans_DIR"] + "chr{chr}_sig_fdr10_genepairs.txt",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=4,
+    params:
+        chr="{chr}",
+    shell:
+        """
+        bash {config[tool_DIR]}run_sig.sh {input} {params.chr}
+        """

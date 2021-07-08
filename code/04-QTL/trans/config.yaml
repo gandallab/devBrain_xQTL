@@ -1,0 +1,13 @@
+samples: /u/project/gandalm/cindywen/isoform_twas/gbat/data/samples.txt ##sample ids that matchs the bam file names; processed phenotype file will be in this order
+samples2: /u/project/gandalm/cindywen/isoform_twas/gbat/data/samples_plink2.txt ## no header line, one column for IID
+samples3: /u/project/gandalm/cindywen/isoform_twas/gbat/data/samples_0_FID.txt ## FID is 0
+BAM_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/data/bam/ ##already filtered BAM
+count_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/data/count/ ##put output directory for featurecount output
+tool_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/code/scripts/ ##the directory containing all the cvblup script etc
+gtf_FILE: /u/project/gandalm/shared/refGenomes/hg19/Gencode/v33/gencode.v33lift37.annotation.gtf ##to filter for mappability
+trans_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/out/ ##the output directory containing all trans analaysis output
+python_DIR: /u/local/apps/anaconda3/2019.03/bin/ ##directory where python 3.? is located
+num_sv: '20' ##number of SVs used, default is 20.
+plink2: /u/project/gandalm/shared/apps/plink2
+genotype_DIR: /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/gbat_geno/ ##directory containing all the genotype files in plink bfile format separated for each chromosome, file name should be chr1.bed, chr1.bim chr1.fam etc; samples should be in the same order as the samples file
+
