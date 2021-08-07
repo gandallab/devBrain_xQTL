@@ -2,10 +2,10 @@ samples: /u/project/gandalm/cindywen/isoform_twas/gbat/data/samples.txt ##sample
 samples2: /u/project/gandalm/cindywen/isoform_twas/gbat/data/samples_plink2.txt ## no header line, one column for IID
 samples3: /u/project/gandalm/cindywen/isoform_twas/gbat/data/samples_0_FID.txt ## FID is 0
 BAM_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/data/bam/ ##already filtered BAM
-count_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/data/count/ ##put output directory for featurecount output
+count_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/data/count_mapFiltered/ ##put output directory for featurecount output
 tool_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/code/scripts/ ##the directory containing all the cvblup script etc
-gtf_FILE: /u/project/gandalm/shared/refGenomes/hg19/Gencode/v33/gencode.v33lift37.annotation.gtf ##to filter for mappability
-trans_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/out/ ##the output directory containing all trans analaysis output
+# gtf_FILE: /u/project/gandalm/shared/refGenomes/hg19/Gencode/v33/gencode.v33lift37.annotation.gtf ##to filter for mappability
+trans_DIR: /u/project/gandalm/cindywen/isoform_twas/gbat/out_mapFiltered/ ##the output directory containing all trans analaysis output
 python_DIR: /u/local/apps/anaconda3/2019.03/bin/ ##directory where python 3.? is located
 num_sv: '20' ##number of SVs used, default is 20.
 plink2: /u/project/gandalm/shared/apps/plink2

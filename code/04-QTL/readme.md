@@ -4,6 +4,7 @@
 - `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - `susie_analysis.ipynb`: susie finemapping results
 - `cell_specific_analysis.ipynb`: cell type/group specific and interaction results
+- `functional_enrichment.ipynb`: functional enrichment analysis of QTL
 - `Snakefile`
 ```
 rules:
@@ -89,9 +90,13 @@ Separate ancestry
     - ancestry_call_perm
 Intron annotation
     - prepare_leafviz_annot
-    - map_clusters_to_genes
     - annotate_intron
     - summarise_annot
+GTEx way
+    - prepare_leafviz_annot_exons: add gene_id in all_exons file
+    - map_clusters_to_genes
+    - make_grp_and_bed_file
+    - fastqtl_grp_perm
 Conditional 
     - permutations_all_threshold: compute a npval threshold for all tested introns
     - conditional: run QTLtools conditional pass
@@ -105,6 +110,24 @@ susie finemapping
     - sort_susie
 ```
 ## trans
+- `gbat.ipynb`
+- `Snakefile`
+```
+rules:
+- filter (input BAM already passed the filters)
+- gtf_filter_mappability: remove exons in  GTF that overlap with ENCODE low mappability regions 
+- merge_gtf: merge chr
+- count: run featureCounts
+- rdata: generate rdata with all sample featureCounts, CPM filter, quantile normalize TPM (gene and sample), standardize
+- make_geno
+- cvBLUP: predict gene expression
+- move
+- pearsonR: R2 of predicted and observed gene expression
+- cor: use cal_cor_covar.txt to include covariates and to combine with supervised SVA; not using script cal_cor.R
+- pval
+- qval
+- sig
+```
 ## APEX
 - `apex_analysis.ipynb`
 - `Snakefile`:

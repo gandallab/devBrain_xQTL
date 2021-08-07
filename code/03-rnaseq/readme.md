@@ -20,3 +20,6 @@ txi.tx <- tximport(files, type="salmon", txOut=TRUE, dropInfReps=TRUE, countsFro
 write.table(txi.tx$counts,file="tx.counts.scaled.tsv",quote=FALSE, sep='\t')
 write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 ```
+-   Sample swap check: 
+1. verifyBamID (very slow. Use `--smID` to add subject ID to BAM sequence file)
+2. `check.ipynb` Called SNP from BAM, merged with imputed genotype

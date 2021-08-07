@@ -1,6 +1,7 @@
 #! /usr/bin/env Rscript
 library(argparser)
 library(preprocessCore)
+library(phenix)
 
 p <- arg_parser("Merge featureCounts to one rdata")
 p <- add_argument(p, "--count_dir", help="Dir with featureCounts output")
@@ -46,47 +47,47 @@ total_count <- apply(all,2,sum)
 for(i in 1:ncol(all)){
     cpm[,i] <- (all[,i]/(total_count[i]/1000000))
 }
-
 # Keep genes with at least 1 CPM in at least 50% subjects
 ex_count <- apply(cpm,1,count_read)
 keep.flag <- which(ex_count >= as.numeric(args$subj_count)/2)
 
-all <- cpm[keep.flag,] # all is now CPM
+# all <- cpm[keep.flag,] # all is now CPM
+# dat <- dat[keep.flag,]
+# cpm <- cpm[keep.flag,]
+
+# # TPM
+# gene_length <- abs(dat$Length)
+# # bug in original code
+# cpm_scale <- cpm
+# for (i in 1:length(gene_length)) {
+#     cpm_scale[i,] <- cpm_scale[i,]/gene_length[i]
+# }
+# total_count_scale <- apply(cpm_scale, 2, sum)
+# for(i in 1:ncol(all)){
+#     all[,i] <- (all[,i]/gene_length)/(total_count_scale[i]/1000000)
+# }
+
+all <- all[keep.flag,] 
 dat <- dat[keep.flag,]
 
-# Convert all to TPM
-gene_length <- abs(dat$Length)
-# bug in original code
-cpm_scale <- cpm
-for (i in 1:length(gene_length)) {
-    cpm_scale[i,] <- cpm_scale[i,]/gene_length[i]
-}
-total_count_scale <- apply(cpm_scale, 2, sum)
+# TPM
+gene_length <- abs(dat$Length)/1000
+rpk <- matrix(0, length(gene_length), as.numeric(args$subj_count))
 for(i in 1:ncol(all)){
-    all[,i] <- (all[,i]/gene_length)/(total_count_scale[i]/1000000)
+    rpk[,i] <- (all[,i]/gene_length)
+}
+total_rpk <- apply(rpk,2,sum)
+for(i in 1:ncol(all)){
+    all[,i] <- rpk[,i]/(total_rpk[i]/1000000)
 }
 
-# First quantile normalize across samples, then quantile normalize across genes
+# First quantile normalize TPM across samples, then quantile normalize across genes
+# quantnorm does standardization
 all <- normalize.quantiles(as.matrix(all))
 all.t <- t(all)
-all2 <- normalize.quantiles(all.t)
+all2 <- quantnorm(all.t)
 all <- t(all2)
 
-# Standardize
-all.norm <- matrix(0, nrow(all), ncol(all))
-ex_mean <- apply(all, 1, mean, na.rm=T)
-for(i in 1:ncol(all)){
-    all.norm[,i] <- all[,i] - ex_mean
-}
-ex_sd <- apply(all,1,sd,na.rm=T)
-for(i in 1:ncol(all)){
-    all.norm[,i] <- all.norm[,i]/ex_sd
-}
-
-# all.t: quantile normalized TPM
-# ex.t: quantile normalized, standardized TPM
-all.t <- t(all)
-ex.t <- all.norm
-ex <- t(ex.t)
+ex <- t(all)
 gnames <- as.character(dat[,1])
-save(all.t, ex, gnames, file = args$out)
+save(ex, gnames, file = args$out)

@@ -15,11 +15,8 @@ trans_dir <- args[8]
 cov_file <- args[9]
 pr_thres <- as.numeric(args[10])
 
-# Empty file
-if (chr == 21 & sub ==1) {
-    out <- data.frame("")
-    write.table(out, output, col.names = F, row.names = F, sep = "\t")
-} else {
+# Note when no gene has cis variants in this subset (chr21_sub1)
+if (file.info(cvblup_file)$size > 3) {
     load(rdata)
     source(paste(tool_dir,'make_smartsva.R',sep=""))
     exp_genes <- gnames
@@ -57,4 +54,7 @@ if (chr == 21 & sub ==1) {
     	}
     }
     write.table(allcor, output, row.names = F, col.names = coln)
+} else {
+    out <- data.frame("")
+    write.table(out, output, col.names = F, row.names = F, sep = "\t")
 }

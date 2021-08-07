@@ -4,7 +4,7 @@ suppressMessages(library(ggplot2))
 suppressMessages(library(data.table))
 suppressMessages(library(dplyr))
 suppressMessages(library(tidyr))
-# suppressMessages(library(wesanderson))
+suppressMessages(library(wesanderson))
 
 p <- arg_parser("Nominal QTL effect size")
 p <- add_argument(p, "--pop1", help="pop1 nominal all assoc")
@@ -63,24 +63,24 @@ df <- rbind(pop1_pop2_beta, pop1_only_beta, pop2_only_beta)
 df$group <- c(rep(args$pop12_group, nrow(pop1_pop2_beta)),
               rep(args$pop1_group, nrow(pop1_only_beta)),
               rep(args$pop2_group, nrow(pop2_only_beta)))
-df$group <- factor(df$group, levels = c(args$pop1_group, args$pop2_group, args$pop12_group))
+df$group <- factor(df$group, levels = c(args$pop12_group, args$pop1_group, args$pop2_group))
 
-cols <- c( "group1" = "#00A08A", 
-           "group2" = "#F2AD00", 
-           "group12" = "#FF0000" )
-names(cols) <- c(args$pop1_group, args$pop2_group, args$pop12_group)
+# cols <- c( "group1" = "#00A08A", 
+#            "group2" = "#F2AD00", 
+#            "group12" = "#FF0000" )
+# names(cols) <- c(args$pop1_group, args$pop2_group, args$pop12_group)
 
 p <- ggplot(df, aes(x = slope.x, y = slope.y)) +
-    geom_point(aes(color = group), alpha = .4, size = .5) +
+    geom_point(aes(color = group), alpha = .2, size = .5) +
     theme_classic() +
     labs(x = paste0(substring(args$pop1_group, 1, 3), " effect size"), 
          y = paste0(substring(args$pop2_group, 1, 3), " effect size")) +
-    # scale_color_manual(values = wes_palette("Darjeeling1"), name = "Significant cis-eQTL") +
-    scale_color_manual(values = cols, name = "Significant cis-eQTL") +
+    scale_color_manual(values = wes_palette("Darjeeling1"), name = "Significant cis-eQTL") +
+    # scale_color_manual(values = cols, name = "Significant cis-eQTL") +
     theme(axis.title = element_text(size = 18),
           axis.text = element_text(size = 16),
           legend.title = element_text(size = 16),
           legend.text = element_text(size = 14)) +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "grey", size = 1.2) +
-    geom_smooth(method = 'lm', data = subset(df, group == args$pop12_group), aes(color = group), fullrange = TRUE)
+    geom_smooth(method = 'lm', aes(color = group), fullrange = TRUE)
 ggsave(args$out, p, width = 8, height = 6)

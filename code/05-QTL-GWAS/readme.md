@@ -18,10 +18,11 @@ rules:
 ```
 rules:
 - make_plink
-- compute_weights
-- concat_hsq
-- summary_wgt
-- make_pos_file
-- assoc
-- concat_extract
+- compute_weights (rn)
+- concat_hsq (rn)
+- write_wgtlist (rn)
+- summary_wgt (rn)
+- make_pos_file (rn)
+- assoc (rn)
+- concat_extract (rn)
 ```

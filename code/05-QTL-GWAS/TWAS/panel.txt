@@ -1,0 +1,4 @@
+PANEL	N
+eur	280
+amr	162
+afr	135

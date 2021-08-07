@@ -11,13 +11,8 @@ rdata <- args[3]
 load(rdata)
 exp_genes <- gnames
 
-# Error when no gene has cis variants in this subset (note this is not reproducible now; maybe edit later)
-chr <- substring(basename(input), 4, 5)
-sub <- substring(basename(input), 10, 11)
-if (chr == "21" & sub == "1.") {
-    out <- data.frame("")
-    write.table(out, output, col.names = F, row.names = F, sep = "\t")
-} else {
+# Note when no gene has cis variants in this subset (chr21_sub1)
+if (file.info(input)$size > 3) {
     dat <- read.table(input, header = T, as.is = T, check.names = F)
     goos_cor <- NULL
     for(i in 1:ncol(dat)){
@@ -27,4 +22,26 @@ if (chr == "21" & sub == "1.") {
     }
     out <- data.frame(genes = colnames(dat), rsquared_goos_sva = goos_cor)
     write.table(out, output, row.names = F, quote = F, sep = "\t")
+} else {
+    out <- data.frame("")
+    write.table(out, output, col.names = F, row.names = F, sep = "\t")
 }
+
+
+# chr <- substring(basename(input), 4, 5)
+# sub <- substring(basename(input), 10, 11)
+
+# if (chr == "21" & sub == "1.") {
+#     out <- data.frame("")
+#     write.table(out, output, col.names = F, row.names = F, sep = "\t")
+# } else {
+#     dat <- read.table(input, header = T, as.is = T, check.names = F)
+#     goos_cor <- NULL
+#     for(i in 1:ncol(dat)){
+#         namei <- colnames(dat)[i]
+#         ex.flag <- which(exp_genes == namei)
+#         goos_cor <- c(goos_cor,cor(dat[,i],ex[,ex.flag]))
+#     }
+#     out <- data.frame(genes = colnames(dat), rsquared_goos_sva = goos_cor)
+#     write.table(out, output, row.names = F, quote = F, sep = "\t")
+# }

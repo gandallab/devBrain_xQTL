@@ -13,7 +13,8 @@
 
 ### Genotype (`working/geno/`)
 ***Please note some TOPMED variants are not mapped to rsID. They are still in hg38 coordinates as ID (chr:pos). Their coordinates are hg19 in the final genotype file.***
-
+- AMR, AFR genotype plink files used for FUSION
+  
 ### Covariates (`working/covariates/`)
 
 ### cis-eQTL (`output/cis_eQTL_nominal_permutation_conditional_finemapping/`)
@@ -68,3 +69,6 @@
 - [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
 
 ### trans-eQTL (`output/trans_eQTL/`)
+
+### FUSION-TWAS weights (`output/TWAS_wights/`)
+- EUR, AMR, AFR; with or without rank normalization

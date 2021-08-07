@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 
 configfile: "config.yaml"
@@ -12,12 +13,14 @@ SUBS = "1 2 3 4 5 6 7 8 9 10".split()
 """
 rules:
 - filter (input BAM already passed the filters)
+- gtf_filter_mappability: remove exons in  GTF that overlap with ENCODE low mappability regions 
+- merge_gtf: merge chr
 - count: run featureCounts
 - rdata: generate rdata with all sample featureCounts, CPM filter, quantile normalize TPM (gene and sample), standardize
 - make_geno
-- cvBLUP
+- cvBLUP: predict gene expression
 - move
-- pearsonR
+- pearsonR: R2 of predicted and observed gene expression
 - cor: use cal_cor_covar.txt to include covariates and to combine with supervised SVA; not using script cal_cor.R
 - pval
 - qval
@@ -27,7 +30,8 @@ rules:
 
 rule all:
     input:
-        expand(config["trans_DIR"] + "chr{chr}_sig_fdr10_genepairs.txt", chr=CHRS),
+        # expand(config["trans_DIR"] + "chr{chr}_sig_fdr10_genepairs.txt", chr=CHRS),
+        "log_residQN_h2g",
 
 
 # rule filter:
@@ -44,11 +48,54 @@ rule all:
 #         ] + "pysam_filter.py --bfile {input} --outdir " + config["BAM_OUT"]
 
 
+rule gtf_filter_mappability:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/gbat/data/wgEncodeCrgMapabilityAlign36mer.bedGraph",
+        "/u/project/gandalm/cindywen/isoform_twas/salmon/gencode.v33lift37.annotation.exon.gtf",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/gbat/data/gencode.v33lift37.annotation.exon.mappabilityFiltered.chr{chr}.gtf",
+    resources:
+        mem_gb=6,
+        time_min=240,
+        num_cores=4,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript {config[tool_DIR]}gtf_filter.R \
+            --map {input[0]} \
+            --exon {input[1]} \
+            --out {output[0]} \
+            --chr {wildcards.chr}
+        """
+
+
+rule merge_gtf:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/gbat/data/gencode.v33lift37.annotation.exon.mappabilityFiltered.chr{chr}.gtf",
+            chr=np.arange(1, 23, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/gbat/data/gencode.v33lift37.annotation.exon.mappabilityFiltered.gtf",
+    resources:
+        mem_gb=6,
+        time_min=120,
+    shell:
+        """
+        for i in {{1..22}};
+        do cat /u/project/gandalm/cindywen/isoform_twas/gbat/data/gencode.v33lift37.annotation.exon.mappabilityFiltered.chr${{i}}.gtf >> {output};
+        done
+        """
+
+
 rule count:
     input:
         config["BAM_DIR"] + "{sample}.STARAligned.sortedByCoord.WASPfiltered.out.bam",
+        "/u/project/gandalm/cindywen/isoform_twas/gbat/data/gencode.v33lift37.annotation.exon.mappabilityFiltered.gtf",
     output:
         config["count_DIR"] + "{sample}.count.txt",
+        config["count_DIR"] + "{sample}.count.txt.summary",
     resources:
         mem_gb=4,
         time_min=240,
@@ -59,8 +106,9 @@ rule count:
         {config[tool_DIR]}featureCounts \
             -t exon \
             -g gene_id \
-            -a {config[gtf_FILE]} \
-            -o {output} {input}
+            -a {input[1]} \
+            -o {output[0]} \
+            {input[0]}
         """
 
 
@@ -74,7 +122,7 @@ rule rdata:
         time_min=240,
         num_cores=4,
     params:
-        gene_count=62486,
+        gene_count=34798,
         subj_count=640,
     shell:
         """
@@ -117,7 +165,7 @@ rule sva:
 
 rule make_geno:
     input:
-        config["genotype_DIR"] + "filtered.hg19.sorted.removeRel.vcf.gz",
+        config["genotype_DIR"] + "../filtered.hg19.sorted.removeRel.vcf.gz",
     output:
         expand(
             config["genotype_DIR"] + "chr{{chr}}.{file}",
