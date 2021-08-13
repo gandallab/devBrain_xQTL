@@ -74,29 +74,31 @@ rule all:
         #     ],
         # ),
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/chunk{chunk}.txt.gz",
-            chunk=np.arange(1, 51, 1),
-            window="1e6",
-            best_num_hcp=40,
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/all_assoc.txt.gz",
+            zip,
+            best_num_hcp=[35, 40],
+            window=WINDOWS,
         ),
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/chunk{chunk}.txt.gz.done",
-            chunk=np.arange(1, 51, 1),
-            window="1e6",
-            best_num_hcp=40,
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/sig_pheno.txt",
+            zip,
+            best_num_hcp=[35, 40],
+            window=WINDOWS,
         ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/all_assoc.txt.gz",
-        #     zip,
-        #     best_num_hcp=[35, 40],
-        #     window=WINDOWS,
-        # ),
-        #  expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/sig_pheno.txt",
-        #     zip,
-        #     best_num_hcp=[35, 40],
-        #     window=WINDOWS,
-        # ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/chunk{chunk}.txt.gz",
+            chunk=np.arange(1, 96, 1),
+            ancestry="eur",
+            num_hcp=np.arange(5, 51, 5),
+            window=WINDOWS,
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/chunk{chunk}.txt.gz.done",
+            chunk=np.arange(1, 96, 1),
+            ancestry="eur",
+            num_hcp=np.arange(5, 51, 5),
+            window=WINDOWS,
+        ),
         # expand(
         #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/{file}",
         #     ancestry="eur",
@@ -507,8 +509,8 @@ rule fastqtl_perm:
         "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/chunk{chunk}.txt.gz.done",
     resources:
         mem_gb=6,
-        time_min=480,
-        num_cores=4,
+        time_min=1440,
+        num_cores=6,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}",
     shell:

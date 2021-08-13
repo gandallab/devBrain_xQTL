@@ -52,8 +52,17 @@ cell type/group specific
     - cg_cov
     - cg_fastqtl_nominal
     - cg_call_nominal
-
+Ancestry eQTL effect size
     - make_effect_size_scatter_eur_amr, eur_afr, afr_amr
+Torus: functional enrichment
+    - make_annot
+    - merge_annot
+    - fastqtl_calculate_sebeta
+    - run_toru
+PAINTOR: multi-ethnic fine-mapping
+    - make_eur_coord: as in sLDSC for ALL, make variant coord file for EUR. ALL does not cover all shared variants between EUR, AMR, AFR
+    - make_eur_annot: need variant annot for shared variants between EUR, AMR, AFR
+    - merge_eur_annot:
 """
 
 
@@ -112,23 +121,27 @@ rule all:
         ),
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm_purity_filtered.txt.gz",
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{ancestry}_ciseqtl_{num_hcp}hcp_perm_purity_filtered.txt.gz", zip, 
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{ancestry}_ciseqtl_{num_hcp}hcp_perm_purity_filtered.txt.gz",
+            zip,
             ancestry=["eur", "amr", "afr"],
             num_hcp=[50, 15, 25],
         ),
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/conditional_full.txt",
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{cell_group}_mixed_nominal/{file}",
-            file=[
-                "all_assoc.txt.gz",
-                "significant_assoc.txt",
-                "significant_feature_count.txt",
-            ],
-            cell_group=np.arange(1, 9, 1),
-        ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{cell_group}_mixed_nominal/{file}",
+        #     file=[
+        #         "all_assoc.txt.gz",
+        #         "significant_assoc.txt",
+        #         "significant_feature_count.txt",
+        #     ],
+        #     cell_group=np.arange(1, 9, 1),
+        # ),
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_eur_amr.png",
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_eur_afr.png",
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_afr_amr.png",
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_significant_assoc.txt.gz",
 
 
 rule expr_prep:
@@ -1375,6 +1388,7 @@ rule cg_call_nominal:
         """
 
 
+################################### Ancestry effect size ###################################
 rule make_effect_size_scatter_eur_amr:
     input:
         pop1="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_nominal_50HCP/all_assoc.txt.gz",
@@ -1463,3 +1477,169 @@ rule make_effect_size_scatter_afr_amr:
             --pop1_group "{params.pop1_group}" \
             --pop2_group "{params.pop2_group}"
         """
+
+
+################################### Torus functional enrichment ###################################
+rule make_annot:
+    input:
+        ref="/u/project/gandalm/shared/refGenomes/ensembl_regulatory_build/homo_sapiens.GRCh37.Regulatory_Build.regulatory_features.20201218.gff.gz",
+        coord="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_coord.tsv",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot_chr{chr}.tsv",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=6,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+
+        Rscript scripts/make_annot.R \
+            {input.ref} \
+            {input.coord} \
+            {wildcards.chr} \
+            {params.prefix}
+        """
+
+
+rule merge_annot:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot_chr{chr}.tsv",
+            chr=np.arange(1, 23, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot.txt.gz",
+    resources:
+        mem_gb=4,
+        time_min=240,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot",
+    shell:
+        """
+        printf 'SNP\tTF_binding_site_d\tpromoter_flanking_region_d\tpromoter_d\topen_chromatin_region_d\tenhancer_d\tCTCF_binding_site_d\n' > {params.prefix}.txt
+        for i in {{1..22}};do
+        cat {params.prefix}_chr${{i}}.tsv >> {params.prefix}.txt
+        done
+        gzip {params.prefix}.txt
+        """
+
+
+################################### PAINTOR multi-ethnic fine-mapping ###################################
+# Variant coord for ALL is in sLDSC dir
+rule make_eur_coord:
+    input:
+        vcf="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.vcf.gz",
+    output:
+        info="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_info.tsv",
+        coord="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_coord.tsv",
+    resources:
+        mem_gb=4,
+        time_min=120,
+    params:
+        script="/u/project/gandalm/cindywen/isoform_twas/sLDSC/code/scripts/variant_coord.R",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.9
+        module load R/3.6.0
+        bcftools query -f '%CHROM %POS %ID\n' {input.vcf} -o {output.info}
+        Rscript {params.script} \
+            --info {output.info} \
+            --out {output.coord}
+        """
+
+
+rule make_eur_annot:
+    input:
+        ref="/u/project/gandalm/shared/refGenomes/ensembl_regulatory_build/homo_sapiens.GRCh37.Regulatory_Build.regulatory_features.20201218.gff.gz",
+        coord="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_coord.tsv",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot_chr{chr}.tsv",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=6,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+
+        Rscript scripts/make_annot.R \
+            {input.ref} \
+            {input.coord} \
+            {wildcards.chr} \
+            {params.prefix}
+        """
+
+
+rule merge_eur_annot:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot_chr{chr}.tsv",
+            chr=np.arange(1, 23, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot.txt.gz",
+    resources:
+        mem_gb=4,
+        time_min=240,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot",
+    shell:
+        """
+        printf 'SNP\tTF_binding_site_d\tpromoter_flanking_region_d\tpromoter_d\topen_chromatin_region_d\tenhancer_d\tCTCF_binding_site_d\n' > {params.prefix}.txt
+        for i in {{1..22}};do
+        cat {params.prefix}_chr${{i}}.tsv >> {params.prefix}.txt
+        done
+        gzip {params.prefix}.txt
+        """
+
+
+rule fastqtl_calculate_sebeta:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/significant_assoc.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_significant_assoc.txt.gz",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=6,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_significant_assoc",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript scripts/calculate_sebeta.R \
+            --input {input[0]} \
+            --output {params.prefix}.txt
+        gzip {params.prefix}.txt
+        """
+
+
+# rule run_torus:
+#     input:
+#         annot="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot.txt.gz",
+#         fastqtl=""
+#     output:
+#         # out and log
+#     resources:
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load python/3.7.2
+
+#         /u/project/gandalm/shared/apps/torus-master/src/torus \
+#             -d {input.fastqtl} \
+#             --fastqtl \
+#             -est \
+#             -annot {input.annot} \
+#             > {output[0]} \
+#             &> {output[1]}
+#         """

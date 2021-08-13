@@ -40,6 +40,9 @@ susie finemapping
     - run_susie
     - merge_susie
     - sort_susie
+Torus: functional enrichment
+    - fastqtl_calculate_sebeta
+    - run_torus
 """
 
 
@@ -100,6 +103,7 @@ rule all:
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_conditional_70hcp/conditional_top_variants.txt",
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_susie_merged.txt",
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_purity_filtered.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_assoc.txt.gz",
 
 
 rule expr_prep:
@@ -882,3 +886,49 @@ rule sort_susie:
         gunzip -c {input[0]} > {params.prefix}_susie_merged.txt
         (head -n 1 {params.prefix}_susie_merged.txt && tail -n +2 {params.prefix}_susie_merged.txt | sort -k3 -k4n ) | bgzip > {params.prefix}_purity_filtered.txt.gz
         """
+
+
+################################### Torus functional enrichment ###################################
+rule fastqtl_calculate_sebeta:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/significant_assoc.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_assoc.txt.gz",
+    resources:
+        mem_gb=4,
+        time_min=240,
+        num_cores=6,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_assoc",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/calculate_sebeta.R \
+            --input {input[0]} \
+            --output {params.prefix}.txt
+        gzip {params.prefix}.txt
+        """
+
+
+# rule run_torus:
+#     input:
+#         annot="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot.txt.gz",
+#         fastqtl="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_significant_assoc.txt.gz"
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/torus.out"
+#     resources:
+#         mem_gb=4,
+#         time_min=120,
+#         num_cores=4
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load python/3.7.2
+#         /u/project/gandalm/shared/apps/torus-master/src/torus \
+#             -d {input.fastqtl} \
+#             --fastqtl \
+#             -est \
+#             -annot {input.annot} \
+#             > {output[0]}
+#         """

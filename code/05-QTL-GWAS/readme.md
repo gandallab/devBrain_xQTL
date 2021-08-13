@@ -14,7 +14,7 @@ rules:
 ```
 ## TWAS-FUSION
 - `TWAS_analysis.ipynb`
-- `Snakefile`
+- `Snakefile`: tested running with and without rank normalization of gene expression
 ```
 rules:
 - make_plink

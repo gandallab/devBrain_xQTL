@@ -5,9 +5,9 @@
 - `susie_analysis.ipynb`: susie finemapping results
 - `cell_specific_analysis.ipynb`: cell type/group specific and interaction results
 - `functional_enrichment.ipynb`: functional enrichment analysis of QTL
+- `PAINTOR.ipynb`: PAINTOR multi-ethnic fine-mapping 
 - `Snakefile`
 ```
-rules:
 prep
     - expr_prep: expression filter, VST normalization, outlier detection, ComBat, create bed file
     - ancestry_expr: subset ancestries
@@ -50,12 +50,21 @@ cell type/group specific
     - cg_cov
     - cg_fastqtl_nominal
     - cg_call_nominal
-
+Ancestry eQTL effect size
     - make_effect_size_scatter_eur_amr, eur_afr, afr_amr
+Torus: functional enrichment
+    - make_annot
+    - merge_annot
+    - fastqtl_calculate_sebeta
+    - run_torus
+PAINTOR: multi-ethnic fine-mapping
+    - make_eur_coord: as in sLDSC for ALL, make variant coord file for EUR. ALL does not cover all shared variants between EUR, AMR, AFR
+    - make_eur_annot: need variant annot for shared variants between EUR, AMR, AFR
+    - merge_eur_annot:
 ```
 ## cis-isoQTL
 - `isoqtl_analysis.ipynb`
-- `Snakefile` follows a similar pipeline as cis-eQTL
+- `Snakefile`: follows a similar pipeline as cis-eQTL
 ## cis-sQTL
 - `sqtl_analysis.ipynb`
 - `Snakefile`
@@ -115,7 +124,7 @@ susie finemapping
 ```
 rules:
 - filter (input BAM already passed the filters)
-- gtf_filter_mappability: remove exons in  GTF that overlap with ENCODE low mappability regions 
+- gtf_filter_mappability: remove exons in  GTF that overlap with ENCODE low mappability regions
 - merge_gtf: merge chr
 - count: run featureCounts
 - rdata: generate rdata with all sample featureCounts, CPM filter, quantile normalize TPM (gene and sample), standardize
@@ -149,5 +158,3 @@ APEX LMM mapping with grm
 APEX trans
     - trans_ols
 ```
-
-  
