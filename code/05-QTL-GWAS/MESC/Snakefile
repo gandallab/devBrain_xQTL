@@ -1,0 +1,307 @@
+from os.path import join
+import os
+import numpy as np
+import pandas as pd
+import sys
+
+
+configfile: "config.yaml"
+
+
+"""
+rules:
+Gene set analysis (using individual level expression and genotype)
+- plink_covar: generate covar file in plink format
+- expr_rel: remove relatatives in expression
+- geno_split: generate chr genotype files
+- effect_egene: estimate eQTL effect sizes
+- gene_set: generate egene set file
+- score_egene: estimate gene set expression scores
+- h2med_egene: estimate h2med
+Overall gene expression analysis
+- score_all_gene: estimate overall gene expression score
+- h2med_all_gene: estimate h2med
+"""
+
+GWAS_DIC = {s["trait"]: s["file"] for s in config["GWAS_LIST"]}
+
+
+rule all:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{GWAS_trait}.all.h2med",
+            GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{GWAS_trait}.categories.h2med",
+            GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{GWAS_trait}.all.h2med",
+            GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{GWAS_trait}.categories.h2med",
+            GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+
+
+rule plink_covar:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov_629.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov_629_plink_MESC.txt",
+    resources:
+        num_gb=4,
+        time_min=120,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript scripts/plink_covar.R \
+            --input {input[0]} \
+            --out {output[0]}
+        """
+
+
+rule expr_rel:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.629_MESC.tsv",
+    resources:
+        num_gb=4,
+        time_min=120,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript scripts/expr_rel.R \
+            --rel {input[0]} \
+            --input {input[1]} \
+            --out {output[0]}
+        """
+
+
+rule geno_spilt:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.{suffix}",
+            suffix=["bed", "bim", "fam", "log", "nosex"],
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.{{chr}}.{suffix}",
+            suffix=["bed", "bim", "fam", "log", "nosex"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted",
+        out="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.{chr}",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b3.45
+        plink --bfile {params.prefix} \
+            --chr {wildcards.chr} \
+            --make-bed \
+            --out {params.out}
+        """
+
+
+############### gene set (egene) analysis ###############
+rule effect_egene:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.{{chr}}.{suffix}",
+            suffix=["bed", "bim", "fam", "log", "nosex"],
+        ),
+        covar="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov_629_plink_MESC.txt",
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.629_MESC.tsv",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{chr}.hsq",
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{chr}.lasso",
+    resources:
+        mem_gb=4,
+        time_min=300,
+        num_cores=8,
+    params:
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted",
+        out="/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene",
+    shell:
+        """
+        # . /u/local/Modules/default/init/modules.sh
+        # module load python/2.7.16
+        set +eu
+        source ~/anaconda3/bin/activate ldsc
+        {config[MESC]}run_mesc.py \
+            --compute-expscore-indiv \
+            --plink-path {config[PLINK]} \
+            --expression-matrix {input.expr} \
+            --columns 4,1,2,5 \
+            --exp-bfile {params.geno} \
+            --geno-bfile {config[LDSC]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr} \
+            --chr {wildcards.chr} \
+            --out {params.out} \
+            --est-lasso-only \
+            --covariates {input.covar}
+        set -eu
+        """
+
+
+rule gene_set:
+    input:
+        egene="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/sig_pheno.txt",
+    output:
+        set_file="/u/project/gandalm/cindywen/isoform_twas/MESC/out/fetal_egene.txt",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        set_name="fetal_egene",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript scripts/set_file.R \
+            --input {input.egene} \
+            --out {output.set_file} \
+            --name {params.set_name}
+        """
+
+
+rule score_egene:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{chr}.hsq",
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{chr}.lasso",
+        set_file="/u/project/gandalm/cindywen/isoform_twas/MESC/out/fetal_egene.txt",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{{chr}}.{file}",
+            file=["G", "ave_h2cis", "gannot", "expscore"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=120,
+        num_cores=6,
+    params:
+        input_prefix="/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene",
+        out="/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene",
+    shell:
+        """
+        # . /u/local/Modules/default/init/modules.sh
+        # module load python/2.7.16
+        # pip install bitarray for 2.7.16
+        # then had problem running ldsc environment which has python/2.7.15
+        # uninstalled bitarray and use ldsc env for mesc
+        set +eu
+        source ~/anaconda3/bin/activate ldsc
+        {config[MESC]}gene_set_analysis.py \
+            --input-prefix {params.input_prefix} \
+            --gene-sets {input.set_file} \
+            --bfile {config[LDSC]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr} \
+            --chr {wildcards.chr} \
+            --out {params.out}
+            # --batch-size
+        set -eu
+        """
+
+
+rule h2med_egene:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{chr}.{file}",
+            chr=np.arange(1, 23, 1),
+            file=["G", "ave_h2cis", "gannot", "expscore"],
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{GWAS_trait}.all.h2med",
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{GWAS_trait}.categories.h2med",
+    resources:
+        mem_gb=4,
+        time_min=120,
+    params:
+        expscore="/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene",
+        out="/u/project/gandalm/cindywen/isoform_twas/MESC/out/gene.{GWAS_trait}",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """ 
+        set +eu
+        source ~/anaconda3/bin/activate ldsc
+        {config[MESC]}run_mesc.py \
+            --h2med {params.GWAS_file}.sumstats.gz \
+            --exp-chr {params.expscore} \
+            --out {params.out}
+        set -eu
+        """
+
+
+############### overall gene expression analysis ###############
+rule score_all_gene:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.{{chr}}.{suffix}",
+            suffix=["bed", "bim", "fam", "log", "nosex"],
+        ),
+        covar="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/90hcp_cov_629_plink_MESC.txt",
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.629_MESC.tsv",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{{chr}}.{file}",
+            file=["G", "ave_h2cis", "gannot.gz", "expscore.gz", "hsq", "lasso"],
+        ),
+    resources:
+        mem_gb=6,
+        time_min=1000,
+        num_cores=12,
+    params:
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted",
+        out="/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene",
+    shell:
+        """
+        set +eu
+        source ~/anaconda3/bin/activate ldsc
+        {config[MESC]}run_mesc.py \
+            --compute-expscore-indiv \
+            --plink-path {config[PLINK]} \
+            --expression-matrix {input.expr} \
+            --columns 4,1,2,5 \
+            --exp-bfile {params.geno} \
+            --geno-bfile {config[LDSC]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr} \
+            --chr {wildcards.chr} \
+            --out {params.out} \
+            --covariates {input.covar}
+        set -eu
+        """
+
+
+rule h2med_all_gene:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{chr}.{file}",
+            file=["G", "ave_h2cis", "gannot.gz", "expscore.gz", "hsq", "lasso"],
+            chr=np.arange(1, 23, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{GWAS_trait}.all.h2med",
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{GWAS_trait}.categories.h2med",
+    resources:
+        mem_gb=4,
+        time_min=120,
+    params:
+        expscore="/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene",
+        out="/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{GWAS_trait}",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """ 
+        set +eu
+        source ~/anaconda3/bin/activate ldsc
+        {config[MESC]}run_mesc.py \
+            --h2med {params.GWAS_file}.sumstats.gz \
+            --exp-chr {params.expscore} \
+            --out {params.out}
+        set -eu
+        """

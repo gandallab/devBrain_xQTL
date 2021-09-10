@@ -1,6 +1,6 @@
 #!/bin/bash -l 
 #$ -cwd
-#$ -l h_data=16G,h_rt=8:00:00
+#$ -l h_data=4G,h_rt=2:00:00
 #$ -j y
 #$ -o /u/project/gandalm/cindywen/isoform_twas/genotype/log/job.out.snakemake
 #$ -m a

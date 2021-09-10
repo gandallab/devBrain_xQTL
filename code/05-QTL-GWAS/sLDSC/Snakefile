@@ -11,12 +11,16 @@ configfile: "config.yaml"
 """
 rules:
 - make_coord_file
+Top eQTL
 - make_set_file_mixed_top_eqtl
 - make_annot_mixed_top_eqtl
 - partition_h2_mixed_top_eqtl
-- make_set_file_mixed_top_isoqtl
-- make_annot_mixed_top_isoqtl
-- partition_h2_mixed_top_isoqtl
+Top isoQTL
+(as above)
+SuSiE variants
+(as above)
+Top sQTL
+(as above)
 """
 
 GWAS_DIC = {s["trait"]: s["file"] for s in config["GWAS_LIST"]}
@@ -37,6 +41,12 @@ rule all:
             window=WINDOW,
             file=["cov", "delete", "log", "part_delete", "results"],
             GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{GWAS_trait}_mixed_top_sqtl_{window}bp_window.{file}",
+            window=0,
+            file=["cov", "delete", "log", "part_delete", "results"],
+            GWAS_trait="SCZ.Clozuk.2018",
         ),
         expand(
             "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{GWAS_trait}_mixed_susie_{window}bp_window.{file}",
@@ -72,6 +82,7 @@ rule make_coord_file:
         """
 
 
+################### Top cis-eQTL ###################
 rule make_set_file_mixed_top_eqtl:
     input:
         input_file="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/sig_pheno.txt",
@@ -183,6 +194,7 @@ rule partition_h2_mixed_top_eqtl:
         """
 
 
+################### Top cis-isoQTL per isoGene ###################
 rule make_set_file_mixed_top_isoqtl:
     input:
         input_file="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_perm_70hcp/sig_pheno.txt",
@@ -298,6 +310,7 @@ rule partition_h2_mixed_top_isoqtl:
         """
 
 
+################### SuSiE CS variants ###################
 rule make_set_file_mixed_susie:
     input:
         susie="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm_purity_filtered.txt.gz",
@@ -386,6 +399,114 @@ rule partition_h2_mixed_susie:
         out_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/",
         annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
         annot_prefix="mixed_susie_{window}bp_window",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """
+        mkdir -p {params.out_dir}
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+
+        echo "GWAS trait: {wildcards.GWAS_trait}"
+        {config[LDSC_PATH]}ldsc.py \
+            --h2 {params.GWAS_file}.sumstats.gz \
+            --ref-ld-chr {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/baseline.,{params.annot_dir}{params.annot_prefix}. \
+            --frqfile-chr {config[LDSC_PATH]}LDSCORE/1000G_Phase3_frq/1000G.EUR.QC. \
+            --w-ld-chr {config[LDSC_PATH]}LDSCORE/weights_hm3_no_hla/weights. \
+            --overlap-annot \
+            --print-cov \
+            --print-coefficients \
+            --print-delete-vals \
+            --out {params.out_dir}{wildcards.GWAS_trait}_{params.annot_prefix}
+
+        set -eu
+        """
+
+
+################### Top cis-sQTL per sGene ###################
+rule make_set_file_mixed_top_sqtl:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_40hcp_1e6/sig_pheno_gene_info.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_top_sqtl.txt",
+    resources:
+        mem_gb=4,
+        time_min=120,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        Rscript scripts/set_file_sqtl.R \
+            --input {input[0]} \
+            --out {output[0]} 
+        """
+
+
+rule make_annot_mixed_top_sqtl:
+    input:
+        set_file=(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_top_sqtl.txt"
+        ),
+        coord_file="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_coord.tsv",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_top_sqtl_{{window}}bp_window.{{chr_num}}.{file}",
+            file=["annot.gz", "l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="mixed_top_sqtl_{window}bp_window",
+        script="scripts/make_annot_customed.py",
+    shell:
+        """
+        mkdir -p {params.annot_dir}
+        # I had problem with /u/home/c/cindywen/anaconda3/etc/profile.d/conda.sh: line 55: PS1: unbound variable. Found this workaround:
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+
+        echo "Make ldsc-friendly annotation files"
+        {params.script} \
+            --gene-set-file {input.set_file} \
+            --gene-coord-file {input.coord_file} \
+            --bimfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num}.bim \
+            --annot-file {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}.annot.gz \
+            --windowsize {wildcards.window}
+
+        echo "Computing LD scores with the annot file {{params.annot_prefix}}.{{wildcards.chr_num}}.annot.gz"
+        {config[LDSC_PATH]}ldsc.py \
+            --l2 \
+            --bfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num} \
+            --print-snps {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/print_snps.txt \
+            --ld-wind-cm 1 \
+            --annot {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}.annot.gz \
+            --thin-annot \
+            --out {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}
+
+        set -eu
+        """
+
+
+rule partition_h2_mixed_top_sqtl:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_top_sqtl_{{window}}bp_window.{chr_num}.{file}",
+            file=["annot.gz", "l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+            chr_num=np.arange(1, 23, 1),
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{{GWAS_trait}}_mixed_top_sqtl_{{window}}bp_window.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/",
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="mixed_top_sqtl_{window}bp_window",
         GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
     shell:
         """

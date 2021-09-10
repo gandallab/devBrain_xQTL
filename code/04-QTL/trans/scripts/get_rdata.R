@@ -21,7 +21,7 @@ args <- parse_args(p)
 # }
 
 count_read <- function(x){
-    return(length(which(x >= 1)))
+    return(length(which(x >= .1)))
 }
 
 # Read featureCounts output into matrix
@@ -47,9 +47,9 @@ total_count <- apply(all,2,sum)
 for(i in 1:ncol(all)){
     cpm[,i] <- (all[,i]/(total_count[i]/1000000))
 }
-# Keep genes with at least 1 CPM in at least 50% subjects
-ex_count <- apply(cpm,1,count_read)
-keep.flag <- which(ex_count >= as.numeric(args$subj_count)/2)
+# # Keep genes with at least 1 CPM in at least 50% subjects
+# ex_count <- apply(cpm,1,count_read)
+# keep.flag <- which(ex_count >= as.numeric(args$subj_count)/2)
 
 # all <- cpm[keep.flag,] # all is now CPM
 # dat <- dat[keep.flag,]
@@ -67,10 +67,10 @@ keep.flag <- which(ex_count >= as.numeric(args$subj_count)/2)
 #     all[,i] <- (all[,i]/gene_length)/(total_count_scale[i]/1000000)
 # }
 
-all <- all[keep.flag,] 
-dat <- dat[keep.flag,]
+# all <- all[keep.flag,] 
+# dat <- dat[keep.flag,]
 
-# TPM
+# TPM (store in all)
 gene_length <- abs(dat$Length)/1000
 rpk <- matrix(0, length(gene_length), as.numeric(args$subj_count))
 for(i in 1:ncol(all)){
@@ -80,6 +80,11 @@ total_rpk <- apply(rpk,2,sum)
 for(i in 1:ncol(all)){
     all[,i] <- rpk[,i]/(total_rpk[i]/1000000)
 }
+# Keep genes with at least .1 TPM in at least 25% subjects
+ex_count <- apply(all,1,count_read)
+keep.flag <- which(ex_count >= as.numeric(args$subj_count)/4)
+all <- all[keep.flag,] 
+dat <- dat[keep.flag,]
 
 # First quantile normalize TPM across samples, then quantile normalize across genes
 # quantnorm does standardization

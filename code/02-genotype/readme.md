@@ -31,4 +31,5 @@ rules:
 - remove_gene_expr_outlier and ancestry_remove_gene_expr_outlier: prepare genotype file for FastQTL
 - remove_tx_expr_outlier and ancestry_remove_tx_expr_outlier: prepare genotype file for FastQTL
 - add_chr: for STAR 2nd pass
+- get_maf: for susie ancestry analysis, get MAF of variants
 ```

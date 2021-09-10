@@ -3,9 +3,10 @@
 - `metadata.ipynb`: plot data demographics, age, sex, infer NA sex, etc.
 - `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - `susie_analysis.ipynb`: susie finemapping results
-- `cell_specific_analysis.ipynb`: cell type/group specific and interaction results
-- `functional_enrichment.ipynb`: functional enrichment analysis of QTL
-- `PAINTOR.ipynb`: PAINTOR multi-ethnic fine-mapping 
+- `decon_analysis.ipynb`: cell type specific and interacting analysis
+- `cell_specific_analysis.ipynb`: (OUTDATED) cell type/group specific and interaction results
+- `func_enrich.ipynb`: functional enrichment analysis of QTL
+- `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
 - `Snakefile`
 ```
 prep
@@ -39,32 +40,40 @@ susie finemapping
     - merge_susie
     - sort_susie
 susie finemapping ancsetry
-    ...as above
-cell type/group interaction
-    - make_decon_dosage
-    - snps_to_test
-    - fix_decon_dosage
-    - run_decon_qtl
-cell type/group specific
-    - bgzip_tabix
-    - cg_cov
-    - cg_fastqtl_nominal
-    - cg_call_nominal
+    (as above)
 Ancestry eQTL effect size
-    - make_effect_size_scatter_eur_amr, eur_afr, afr_amr
+    - make_effect_size_scatter_eur_amr, eur_afr, afr_amr: all nominal associations
+    - scatter_eur_afr, eur_amr, afr_amr: x-axis pop1 eGene-eQTL, y-axis sig or non-sig
 Torus: functional enrichment
-    - make_annot
-    - merge_annot
+    - make_annot_ensembl: use ensembl regulatory build to annotate our variants
+    - run_vep: ensembl variant effect predictor
+    - select_consequences: select rsID and consequence/annotation columns
+    - add_vep: add VEP to annotation
+    - merge_annot_ensembl_vep: merge chr
     - fastqtl_calculate_sebeta
+    - merge_sebeta
     - run_torus
 PAINTOR: multi-ethnic fine-mapping
     - make_eur_coord: as in sLDSC for ALL, make variant coord file for EUR. ALL does not cover all shared variants between EUR, AMR, AFR
     - make_eur_annot: need variant annot for shared variants between EUR, AMR, AFR
     - merge_eur_annot:
 ```
+- `decon.smk`
+```
+rules:
+cell type specific
+    - ct_cov
+    - ct_fastqtl_nominal
+    - ct_call_nominal
+cell type/group interaction
+    - make_decon_dosage
+    - snps_to_test
+    - fix_decon_dosage
+    - run_decon_qtl
+```
 ## cis-isoQTL
 - `isoqtl_analysis.ipynb`
-- `Snakefile`: follows a similar pipeline as cis-eQTL
+- `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx
 ## cis-sQTL
 - `sqtl_analysis.ipynb`
 - `Snakefile`
@@ -117,17 +126,22 @@ susie finemapping
     - run_susie
     - merge_susie
     - sort_susie
+Torus: functional enrichment
+    - fastqtl_calculate_sebeta
+    - merge_sebeta
+    - run_torus
 ```
 ## trans
 - `gbat.ipynb`
 - `Snakefile`
 ```
 rules:
+rules:
 - filter (input BAM already passed the filters)
-- gtf_filter_mappability: remove exons in  GTF that overlap with ENCODE low mappability regions
+- gtf_filter_mappability: remove exons in  GTF that overlap with ENCODE low mappability regions (map score < 1)
 - merge_gtf: merge chr
 - count: run featureCounts
-- rdata: generate rdata with all sample featureCounts, CPM filter, quantile normalize TPM (gene and sample), standardize
+- rdata: generate rdata with all sample featureCounts, quantile normalize TPM (gene and sample), standardize, filter genes by expression
 - make_geno
 - cvBLUP: predict gene expression
 - move

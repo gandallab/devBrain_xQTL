@@ -24,6 +24,7 @@ rules:
     remove_gene_expr_outlier and ancestry_remove_gene_expr_outlier: prepare genotype file for FastQTL
     remove_tx_expr_outlier and ancestry_remove_tx_expr_outlier: prepare genotype file for FastQTL
     add_chr: for STAR 2nd pass 
+    get_maf: for susie ancestry analysis, get MAF of variants
 """
 
 
@@ -73,6 +74,10 @@ rule all:
             ancestry=["eur", "amr", "afr"],
         ),
         config["GENO_DIR"] + "ancestry/plink.genome.gz",
+        expand(
+            config["GENO_DIR"] + "ancestry/{ancestry}/maf.gz",
+            ancestry=["eur", "amr", "afr"],
+        ),
 
 
 rule walker_subj:
@@ -1029,4 +1034,27 @@ rule add_chr:
         module load htslib/1.9
         zcat {input[0]} | awk '{{if($0 !~ /^#/) print "chr"$0; else print $0}}' | bgzip -c > {output[0]}
         tabix -p vcf {output[0]}
+        """
+
+# See ~/project-gandalm/isoform_twas/genotype/temp/ and susie_analysis.ipynb 
+# used MAF for pre-filtered ancestry genotype file, or there are variants that are absent in one ancestry for not passing variant QC
+rule get_maf:
+    input:
+        expand(
+            config["GENO_DIR"]
+            + "ancestry/{{ancestry}}/filtered.hg19.sorted.removeRel.{suffix}",
+            suffix=["vcf.gz", "vcf.gz.tbi"],
+        ),
+    output:
+        config["GENO_DIR"] + "ancestry/{ancestry}/maf.gz",
+    resources:
+        mem_gb=4,
+        time_min=120,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load bcftools/1.10.2
+        module load htslib/1.10.2
+
+        bcftools +fill-tags {input[0]} -- -t MAF | bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%MAF\n' | bgzip -c > {output[0]}
         """
