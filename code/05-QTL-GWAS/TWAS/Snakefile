@@ -17,6 +17,8 @@ rules:
 - make_pos_file (rn)
 - assoc (rn)
 - concat_extract (rn)
+- chr_sig_rn
+- pos_process_rn
 """
 
 GWAS_DIC = {s["trait"]: s["file"] for s in config["GWAS_LIST"]}

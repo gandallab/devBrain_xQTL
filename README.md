@@ -104,6 +104,7 @@ susie finemapping
     - sort_susie
 susie finemapping ancsetry
     (as above)
+    - locuszoom: also see susie_analysis.ipynb
 Ancestry eQTL effect size
     - make_effect_size_scatter_eur_amr, eur_afr, afr_amr: all nominal associations
     - scatter_eur_afr, eur_amr, afr_amr: x-axis pop1 eGene-eQTL, y-axis sig or non-sig
@@ -113,8 +114,9 @@ Torus: functional enrichment
     - select_consequences: select rsID and consequence/annotation columns
     - add_vep: add VEP to annotation
     - merge_annot_ensembl_vep: merge chr
-    - fastqtl_calculate_sebeta
-    - merge_sebeta
+    - (fastqtl_calculate_sebeta): too slow for all nominal association, run GTEx's FastQTL to get sebeta
+    - (merge_sebeta)
+    - gtex_fastqtl
     - run_torus
 PAINTOR: multi-ethnic fine-mapping
     - make_eur_coord: as in sLDSC for ALL, make variant coord file for EUR. ALL does not cover all shared variants between EUR, AMR, AFR
@@ -178,7 +180,9 @@ GTEx way
     - map_clusters_to_genes
     - make_grp_and_bed_file
     - fastqtl_grp_perm
-Conditional 
+    - gtex_grp_perm_write_chunk_log_list
+    - gtex_grp_perm_merge_chunk
+Conditional
     - permutations_all_threshold: compute a npval threshold for all tested introns
     - conditional: run QTLtools conditional pass
     - get_top_variants: get top variants per rank
@@ -190,8 +194,12 @@ susie finemapping
     - merge_susie
     - sort_susie
 Torus: functional enrichment
-    - fastqtl_calculate_sebeta
-    - merge_sebeta
+    - (fastqtl_calculate_sebeta)
+    - (merge_beta)
+    - gtex_fastqtl
+    - gtex_write_chunk_log_list
+    - gtex_merge_chunk
+    - make_torus_input
     - run_torus
 ```
 ##### trans
@@ -246,11 +254,11 @@ Top eQTL
     - make_annot_mixed_top_eqtl
     - partition_h2_mixed_top_eqtl
 Top isoQTL
-    (as above)
+    (as above, note: use top QTL per gene and GTEx grouped permutation results)
 SuSiE variants
     (as above)
 Top sQTL
-    (as above)
+    (as above, note: use top QTL per gene and GTEx grouped permutation results)
 ```
 ##### TWAS-FUSION
 - `TWAS.ipynb`
@@ -265,6 +273,8 @@ rules:
 - make_pos_file (rn)
 - assoc (rn)
 - concat_extract (rn)
+- chr_sig_rn
+- pos_process_rn
 ```
 ##### MESC
 - `Snakefile`
@@ -281,6 +291,7 @@ Gene set analysis (using individual level expression and genotype)
 Overall gene expression analysis
     - score_all_gene: estimate overall gene expression score
     - h2med_all_gene: estimate h2med
+Overall isoform expression
 ```
 ------
 ## Data and results

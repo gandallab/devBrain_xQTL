@@ -10,11 +10,11 @@ Top eQTL
     - make_annot_mixed_top_eqtl
     - partition_h2_mixed_top_eqtl
 Top isoQTL
-    (as above)
+    (as above, note: use top QTL per gene and GTEx grouped permutation results)
 SuSiE variants
     (as above)
 Top sQTL
-    (as above)
+    (as above, note: use top QTL per gene and GTEx grouped permutation results)
 ```
 ## TWAS-FUSION
 - `TWAS.ipynb`
@@ -29,6 +29,8 @@ rules:
 - make_pos_file (rn)
 - assoc (rn)
 - concat_extract (rn)
+- chr_sig_rn
+- pos_process_rn
 ```
 ## MESC
 - `Snakefile`
@@ -45,4 +47,5 @@ Gene set analysis (using individual level expression and genotype)
 Overall gene expression analysis
     - score_all_gene: estimate overall gene expression score
     - h2med_all_gene: estimate h2med
+Overall isoform expression
 ```

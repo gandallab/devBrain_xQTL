@@ -30,7 +30,11 @@ permutation pass
     - call_perm
     - ancestry_call_perm
 GTEX grouped permutation
-    - make_grp_and_bed_file
+    - make_bed_file
+    - make_grp_file
+    - gtex_fastqtl_grp_perm
+    - gtex_grp_perm_write_chunk_log_list
+    - gtex_grp_perm_merge_chunk
 conditional pass
     - permutations_all_threshold: compute a npval threshold for all expressed genes
     - conditional
@@ -43,8 +47,12 @@ susie finemapping
     - merge_susie
     - sort_susie
 Torus: functional enrichment
-    - fastqtl_calculate_sebeta
-    - merge_beta
+    - (fastqtl_calculate_sebeta)
+    - (merge_beta)
+    - gtex_fastqtl
+    - gtex_write_chunk_log_list
+    - gtex_merge_chunk
+    - make_torus_input
     - run_torus
 """
 
@@ -102,14 +110,14 @@ rule all:
         #     num_hcp=20,
         #     file=["all_assoc.txt.gz", "sig_pheno.txt"],
         # ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.txt.gz",
-            num_hcp=70,
-        ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.genes.txt.gz",
-            num_hcp=70,
-        ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.txt.gz",
+        #     num_hcp=70,
+        # ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.genes.txt.gz",
+        #     num_hcp=70,
+        # ),
         # "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_conditional_70hcp/conditional_full.txt",
         # "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_conditional_70hcp/conditional_top_variants.txt",
         # "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_susie_merged.txt",
@@ -660,8 +668,8 @@ rule make_grp_file:
 
 
 # The following three rules are basically running run_FastQTL_threaded.py in GTEx's version of FastQTL
-# Celine ran this rule in bash script
-rule run_fastqtl_grp_perm:
+# Celine ran this rule in bash script, output files won't be removed if error when no cis variants in chunk
+rule gtex_fastqtl_grp_perm:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx_grp.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeTxOutlier.vcf.gz",
@@ -683,7 +691,6 @@ rule run_fastqtl_grp_perm:
         mkdir -p {params.out_dir}
         . /u/local/Modules/default/init/modules.sh
         module load gcc/9.3.0
-        mkdir -p {params.out_dir}
         /u/project/gandalm/cindywen/isoform_twas/sqtl_new/fastqtl-gtex/bin/fastQTL.static \
             --vcf {input.geno} \
             --bed {input.expr} \
@@ -693,7 +700,7 @@ rule run_fastqtl_grp_perm:
             --permute 1000 10000 \
             --seed 123 \
             --exclude-samples {input.rel_file} \
-            --chunk {wildcards.chunk} 1000 \
+            --chunk {wildcards.chunk} 500 \
             --out {output[0]} \
             --log {output[1]} \
             --normal
@@ -701,7 +708,7 @@ rule run_fastqtl_grp_perm:
         """
 
 
-rule write_chunk_log_list:
+rule gtex_grp_perm_write_chunk_log_list:
     input:
         expand(
             "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{{num_hcp}}hcp/chunk{chunk}.{file}",
@@ -723,7 +730,7 @@ rule write_chunk_log_list:
         """
 
 
-rule merge_chunk:
+rule gtex_grp_perm_merge_chunk:
     input:
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/list_chunks.txt",
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/list_log.txt",
@@ -1040,69 +1047,166 @@ rule sort_susie:
 
 
 ################################### Torus functional enrichment ###################################
-rule fastqtl_calculate_sebeta:
+# rule fastqtl_calculate_sebeta:
+#     input:
+#         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/chunk{chunk}.txt.gz",
+#         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/significant_assoc.txt",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz",
+#         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz.done",
+#     resources:
+#         mem_gb=4,
+#         time_min=240,
+#         num_cores=6,
+#     params:
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}",
+#         # num_comparisons=748456165
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/3.6.0
+#         Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/calculate_sebeta.R \
+#             --input {input[0]} \
+#             --output {params.prefix}.txt \
+#             --sig {input[1]}
+#         gzip {params.prefix}.txt
+#         touch {params.prefix}.txt.gz.done
+#         """
+
+
+# rule merge_sebeta:
+#     input:
+#         expand(
+#             "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz",
+#             chunk=np.arange(1, 101, 1),
+#         ),
+#         expand(
+#             "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz.done",
+#             chunk=np.arange(1, 101, 1),
+#         ),
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_all_chunks.txt.gz",
+#         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_all_chunks.txt.gz.done",
+#     resources:
+#         mem_gb=4,
+#         time_min=240,
+#         num_cores=6,
+#     params:
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_",
+#     shell:
+#         """
+#         zcat {params.prefix}chunk*.txt.gz | gzip -c > {params.prefix}all_chunks.txt.gz
+#         touch {params.prefix}all_chunks.txt.gz.done
+#         """
+
+
+rule gtex_fastqtl:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/chunk{chunk}.txt.gz",
-        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/significant_assoc.txt",
+        expr="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx.counts.scaled.normalized.bed.gz",
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeTxOutlier.vcf.gz",
+        cov="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/{num_hcp}hcp_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz",
-        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz.done",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex_chunk{chunk}.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex_chunk{chunk}.log",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex_chunk{chunk}.txt.gz.done",
     resources:
         mem_gb=4,
-        time_min=240,
-        num_cores=6,
+        time_min=120,
     params:
-        prefix="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}",
-        # num_comparisons=748456165
+        outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp",
+    shell:
+        """
+        # mkdir -p {params.outdir}
+        . /u/local/Modules/default/init/modules.sh
+        module load gcc/9.3.0
+        /u/project/gandalm/cindywen/isoform_twas/sqtl_new/fastqtl-gtex/bin/fastQTL.static \
+            --vcf {input.geno} \
+            --bed {input.expr} \
+            --window 1e6 \
+            --cov {input.cov} \
+            --seed 123 \
+            --exclude-samples {input.rel_file} \
+            --chunk {wildcards.chunk} 100 \
+            --out {output[0]} \
+            --log {output[1]} \
+            --normal
+        touch {output[0]}.done
+        """
+
+
+rule gtex_write_chunk_log_list:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{{num_hcp}}hcp/gtex_chunk{chunk}.{file}",
+            file=["txt.gz", "log", "txt.gz.done"],
+            chunk=np.arange(1, 101, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/list_chunks.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/list_log.txt",
+    resources:
+        mem_gb=4,
+        time_min=30,
+    shell:
+        """
+        for i in {{1..100..1}}; do
+        echo /u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{wildcards.num_hcp}hcp/gtex_chunk${{i}}.txt.gz >> {output[0]}
+        echo /u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{wildcards.num_hcp}hcp/gtex_chunk${{i}}.log >> {output[1]}
+        done
+        """
+
+
+rule gtex_merge_chunk:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/list_chunks.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/list_log.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex.allpairs.txt.gz",
+    resources:
+        num_gb=6,
+        time_min=120,
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
+        module load python/3.7.2
         module load R/3.6.0
-        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/calculate_sebeta.R \
-            --input {input[0]} \
-            --output {params.prefix}.txt \
-            --sig {input[1]}
-        gzip {params.prefix}.txt
-        touch {params.prefix}.txt.gz.done
+        python3 /u/project/gandalm/cindywen/isoform_twas/sqtl_new/fastqtl-gtex/python/merge_chunks.py \
+            {input[0]} \
+            {input[1]} \
+            gtex \
+            --fdr 0.05 \
+            -o {params.outdir} \
         """
 
 
-rule merge_sebeta:
+rule make_torus_input:
     input:
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz",
-            chunk=np.arange(1, 101, 1),
-        ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_chunk{chunk}.txt.gz.done",
-            chunk=np.arange(1, 101, 1),
-        ),
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/gtex.allpairs.txt.gz",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_all_chunks.txt.gz",
-        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_all_chunks.txt.gz.done",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/gtex.allpairs.torus.txt.gz",
     resources:
         mem_gb=4,
-        time_min=240,
-        num_cores=6,
-    params:
-        prefix="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_",
+        time_min=120,
     shell:
         """
-        zcat {params.prefix}chunk*.txt.gz | gzip -c > {params.prefix}all_chunks.txt.gz
-        touch {params.prefix}all_chunks.txt.gz.done
+        zcat {input[0]} | tail -n+2 | awk '{{print $1,$2,$3,$7,$8,$9}}' OFS=' ' | gzip > {output[0]}
         """
 
 
+# Celine ran this in bash
 rule run_torus:
     input:
         annot="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot_ensembl_vep.txt.gz",
-        fastqtl="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/sebeta_significant_all_chunks.txt.gz",
+        fastqtl="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/gtex.allpairs.torus.txt.gz",
     output:
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/torus.out",
     resources:
         mem_gb=4,
-        time_min=120,
-        num_cores=4,
+        time_min=1440,
+        num_cores=12,
     shell:
         """
         . /u/local/Modules/default/init/modules.sh

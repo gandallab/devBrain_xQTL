@@ -29,9 +29,9 @@ shared <- pop1 %>% inner_join(pop2, by = "gene_snp")
 dim(shared)
 shared <- shared %>% mutate(group = ifelse(fdr <= 0.05, "sig", "non-sig"))
 
-cols <- c("sig" = "#FF0000", "non-sig" = "#F98400")
+cols <- c("sig" = "#046C9A", "non-sig" = "#ABDDDE")
 p <- ggplot(shared, aes(x = slope.x, y = slope.y)) +
-    geom_point(aes(color = group), alpha = 1, size = 1) +
+    geom_point(aes(color = group), alpha = .6, size = .8) +
     theme_classic() +
     labs(x = paste0(args$pop1_group, " eGene-eQTL effect size"), 
          y = paste0(args$pop2_group, " effect size")) +
@@ -46,6 +46,8 @@ p <- ggplot(shared, aes(x = slope.x, y = slope.y)) +
           legend.text = element_text(size = 14),
           legend.position = c(0.35, 0.95)) +
     geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "grey", size = 1.2) +
-    geom_smooth(method = 'lm', aes(color = group), fullrange = TRUE)
+    geom_smooth(method = 'lm', aes(color = group), fullrange = TRUE) 
+    # geom_rug(data = shared[shared$group == "sig",], alpha = 0.8, color = "#046C9A", aes(x = NULL)) +
+    # geom_rug(data = shared[shared$group == "non-sig",], alpha = 0.8, color = "#ABDDDE", aes(x = NULL))
 
 ggsave(args$out, p, width = 6, height = 6)

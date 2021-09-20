@@ -11,7 +11,7 @@ snakemake \
     --snakefile Snakefile \
     --jobscript cluster_jobscript.sh \
     --cluster-sync "qsub -l h_data={resources.mem_gb}G,h_rt=00:{resources.time_min}:00 -pe shared {resources.num_cores} -o /u/project/gandalm/cindywen/isoform_twas/MESC/log/job.out.pipeline" \
-    --jobs 20 \
+    --jobs 8 \
     --max-jobs-per-second 10 \
     --restart-times 0 \
     --latency-wait 10 \

@@ -41,6 +41,7 @@ susie finemapping
     - sort_susie
 susie finemapping ancsetry
     (as above)
+    - locuszoom: also see susie_analysis.ipynb
 Ancestry eQTL effect size
     - make_effect_size_scatter_eur_amr, eur_afr, afr_amr: all nominal associations
     - scatter_eur_afr, eur_amr, afr_amr: x-axis pop1 eGene-eQTL, y-axis sig or non-sig
@@ -50,26 +51,14 @@ Torus: functional enrichment
     - select_consequences: select rsID and consequence/annotation columns
     - add_vep: add VEP to annotation
     - merge_annot_ensembl_vep: merge chr
-    - fastqtl_calculate_sebeta
-    - merge_sebeta
+    - (fastqtl_calculate_sebeta): too slow for all nominal association, run GTEx's FastQTL to get sebeta
+    - (merge_sebeta)
+    - gtex_fastqtl
     - run_torus
 PAINTOR: multi-ethnic fine-mapping
     - make_eur_coord: as in sLDSC for ALL, make variant coord file for EUR. ALL does not cover all shared variants between EUR, AMR, AFR
     - make_eur_annot: need variant annot for shared variants between EUR, AMR, AFR
     - merge_eur_annot:
-```
-- `decon.smk`
-```
-rules:
-cell type specific
-    - ct_cov
-    - ct_fastqtl_nominal
-    - ct_call_nominal
-cell type/group interaction
-    - make_decon_dosage
-    - snps_to_test
-    - fix_decon_dosage
-    - run_decon_qtl
 ```
 ## cis-isoQTL
 - `isoqtl_analysis.ipynb`
@@ -115,7 +104,9 @@ GTEx way
     - map_clusters_to_genes
     - make_grp_and_bed_file
     - fastqtl_grp_perm
-Conditional 
+    - gtex_grp_perm_write_chunk_log_list
+    - gtex_grp_perm_merge_chunk
+Conditional
     - permutations_all_threshold: compute a npval threshold for all tested introns
     - conditional: run QTLtools conditional pass
     - get_top_variants: get top variants per rank
@@ -127,8 +118,12 @@ susie finemapping
     - merge_susie
     - sort_susie
 Torus: functional enrichment
-    - fastqtl_calculate_sebeta
-    - merge_sebeta
+    - (fastqtl_calculate_sebeta)
+    - (merge_beta)
+    - gtex_fastqtl
+    - gtex_write_chunk_log_list
+    - gtex_merge_chunk
+    - make_torus_input
     - run_torus
 ```
 ## trans

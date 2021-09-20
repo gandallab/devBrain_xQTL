@@ -42,6 +42,7 @@ susie finemapping
     - sort_susie
 susie finemapping ancsetry
     (as above)
+    - locuszoom: also see susie_analysis.ipynb 
 Ancestry eQTL effect size
     - make_effect_size_scatter_eur_amr, eur_afr, afr_amr: all nominal associations
     - scatter_eur_afr, eur_amr, afr_amr: x-axis pop1 eGene-eQTL, y-axis sig or non-sig
@@ -51,8 +52,10 @@ Torus: functional enrichment
     - select_consequences: select rsID and consequence/annotation columns
     - add_vep: add VEP to annotation
     - merge_annot_ensembl_vep: merge chr
-    - fastqtl_calculate_sebeta: note for FDR correction, number of comparisons should be number of lines of all.chunks.txt.gz, not number of test in this chunk!
-    - merge_sebeta
+    - (fastqtl_calculate_sebeta): too slow for all nominal association, run GTEx's FastQTL to get sebeta
+    - (merge_sebeta)
+    - gtex_fastqtl
+    - 
     - run_torus
 PAINTOR: multi-ethnic fine-mapping
     - make_eur_coord: as in sLDSC for ALL, make variant coord file for EUR. ALL does not cover all shared variants between EUR, AMR, AFR
@@ -121,12 +124,13 @@ rule all:
         #     ancestry=["eur", "amr", "afr"],
         #     num_hcp=[50, 15, 25],
         # ),
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/locuszoom_{ancestry}_{num_hcp}HCP_chr1_248100768.pdf", zip, ancestry=["eur", "amr", "afr"],num_hcp=[50, 15, 25],),
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/conditional_full.txt",
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_eur_amr.png",
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_eur_afr.png",
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_afr_amr.png",
-        # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/perm_scatter_eur_afr.png",
-        # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/perm_scatter_eur_amr.png",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/perm_scatter_eur_afr.png",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/perm_scatter_eur_amr.png",
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/torus.out",
         # "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot.txt.gz",
 
@@ -1099,7 +1103,62 @@ rule sort_susie_ancestry:
         (head -n 1 {params.prefix}_susie_merged.txt && tail -n +2 {params.prefix}_susie_merged.txt | sort -k3 -k4n ) | bgzip > {params.prefix}_purity_filtered.txt.gz
         """
 
-
+# --ld-vcf has problem with marker ID
+# all hg19 chr:pos in METAL file
+# can't find matching ones in VCF
+rule locuszoom:
+    input:
+        metal="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/ENSG00000196071.all_assoc_METAL.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/locuszoom_{ancestry}_{num_hcp}HCP_chr1_248100768.pdf"
+    resources:
+        mem_gb=4,
+        time_min=60,
+        num_cores=2
+    params:
+        out="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/locuszoom_{ancestry}_{num_hcp}HCP"
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
+        module load python/2.7.16
+        module load htslib/1.9
+        module load plink/1.90b3.45
+        
+        # find the FDR closet to 0.05, then signif cutoff is -log10(npval)
+        if [[ "{wildcards.ancestry}" == "afr" ]]; then
+            signif=4.502624
+            pop="AFR"
+        elif [[ "{wildcards.ancestry}" == "amr" ]]; then
+            signif=4.014945
+            pop="AMR"
+        elif [[ "{wildcards.ancestry}" == "eur" ]]; then
+            signif=3.619347
+            pop="EUR"
+        fi
+        echo ${{pop}}
+        echo ${{signif}}
+        /u/project/gandalm/shared/apps/locuszoom/bin/locuszoom \
+            theme=publication \
+            --cache None \
+            --no-date \
+            --plotonly \
+            --gene-table gencode \
+            --build hg19 \
+            --metal {input.metal} \
+            --refsnp chr1:248100768 \
+            --flank 50kb \
+            --pop ${{pop}} \
+            --source 1000G_Nov2014 \
+            --prefix {params.out} \
+            signifLine=\"${{signif}}\" \
+            signifLineColor=\"gray\" \
+            signifLineWidth=\"2\" \
+            showRecomb=FALSE \
+            width=10 \
+            height=5 \
+            showGenes=FALSE
+        """
 ################################### Ancestry effect size ###################################
 rule make_effect_size_scatter_eur_amr:
     input:
@@ -1363,73 +1422,166 @@ rule merge_annot_ensembl_vep:
         """
 
 
-# Here we calculate se_beta for all nominal associations
-# Tried to calculate se_beta for significant_assoc.txt, file too large; process in chunk
-# (When running p.adjust in chunk file, specifying num_comparisons=18782059, which is number of lines in all.chunks file, gives different FDR as when processing the all.chunks.txt.gz file alone. Don't know why)
-# (Now not running FDR, instead selecting signigficant association from previous analysis)
-# Before only run torus with significant nominal associations, now use all pairs
-rule fastqtl_calculate_sebeta:
+# # Here we calculate se_beta for all nominal associations
+# rule fastqtl_calculate_sebeta:
+#     input:
+#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/chunk{chunk}.txt.gz",
+#         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/significant_assoc.txt",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz",
+#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz.done",
+#     resources:
+#         mem_gb=6,
+#         time_min=480,
+#         num_cores=12,
+#     params:
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}",
+#         # num_comparisons=187820592 # number of lines in all.chunks.txt.gz
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/3.6.0
+#         Rscript scripts/calculate_sebeta.R \
+#             --input {input[0]} \
+#             --output {params.prefix}.txt
+#         gzip {params.prefix}.txt
+#         touch {params.prefix}.txt.gz.done
+#         """
+
+
+# rule merge_sebeta:
+#     input:
+#         expand(
+#             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz",
+#             chunk=np.arange(1, 101, 1),
+#         ),
+#         expand(
+#             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz.done",
+#             chunk=np.arange(1, 101, 1),
+#         ),
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_all_chunks.txt.gz",
+#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_all_chunks.txt.gz.done",
+#     resources:
+#         mem_gb=4,
+#         time_min=240,
+#         num_cores=6,
+#     params:
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_",
+#     shell:
+#         """
+#         zcat {params.prefix}chunk*.txt.gz | gzip -c > {params.prefix}all_chunks.txt.gz
+#         touch {params.prefix}all_chunks.txt.gz.done
+#         """
+
+
+# The following three rules are basically running run_FastQTL_threaded.py in GTEx's version of FastQTL
+rule gtex_fastqtl:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/chunk{chunk}.txt.gz",
-        # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/significant_assoc.txt",
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.scaled.normalized.bed.gz",
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{num_hcp}hcp_cov.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz",
-        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz.done",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex_chunk{chunk}.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex_chunk{chunk}.log",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex_chunk{chunk}.txt.gz.done",
     resources:
-        mem_gb=6,
-        time_min=480,
-        num_cores=12,
+        mem_gb=4,
+        time_min=120,
     params:
-        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}",
-        # num_comparisons=187820592 # number of lines in all.chunks.txt.gz
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp",
+    shell:
+        """
+        # mkdir -p {params.outdir}
+        . /u/local/Modules/default/init/modules.sh
+        module load gcc/9.3.0
+        /u/project/gandalm/cindywen/isoform_twas/sqtl_new/fastqtl-gtex/bin/fastQTL.static \
+            --vcf {input.geno} \
+            --bed {input.expr} \
+            --window 1e6 \
+            --cov {input.cov} \
+            --seed 123 \
+            --exclude-samples {input.rel_file} \
+            --chunk {wildcards.chunk} 100 \
+            --out {output[0]} \
+            --log {output[1]} \
+            --normal
+        touch {output[0]}.done
+        """
+
+
+rule write_chunk_log_list:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{{num_hcp}}hcp/gtex_chunk{chunk}.{file}",
+            file=["txt.gz", "log", "txt.gz.done"],
+            chunk=np.arange(1, 101, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/list_chunks.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/list_log.txt",
+    resources:
+        mem_gb=4,
+        time_min=30,
+    shell:
+        """
+        for i in {{1..100..1}}; do
+        echo /u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{wildcards.num_hcp}hcp/gtex_chunk${{i}}.txt.gz >> {output[0]}
+        echo /u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{wildcards.num_hcp}hcp/gtex_chunk${{i}}.log >> {output[1]}
+        done
+        """
+
+
+rule gtex_merge_chunk:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/list_chunks.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/list_log.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/gtex.txt.gz",
+    resources:
+        num_gb=6,
+        time_min=120,
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
+        module load python/3.7.2
         module load R/3.6.0
-        Rscript scripts/calculate_sebeta.R \
-            --input {input[0]} \
-            --output {params.prefix}.txt 
-        gzip {params.prefix}.txt
-        touch {params.prefix}.txt.gz.done
+        python3 /u/project/gandalm/cindywen/isoform_twas/sqtl_new/fastqtl-gtex/python/merge_chunks.py \
+            {input[0]} \
+            {input[1]} \
+            gtex \
+            --fdr 0.05 \
+            -o {params.outdir} \
         """
 
 
-rule merge_sebeta:
+rule make_torus_input:
     input:
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz",
-            chunk=np.arange(1, 101, 1),
-        ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_chunk{chunk}.txt.gz.done",
-            chunk=np.arange(1, 101, 1),
-        ),
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/gtex.allpairs.txt.gz",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_all_chunks.txt.gz",
-        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_all_chunks.txt.gz.done",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/gtex.allpairs.torus.txt.gz",
     resources:
         mem_gb=4,
-        time_min=240,
-        num_cores=6,
-    params:
-        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_",
+        time_min=120,
     shell:
         """
-        zcat {params.prefix}chunk*.txt.gz | gzip -c > {params.prefix}all_chunks.txt.gz
-        touch {params.prefix}all_chunks.txt.gz.done
+        zcat {input[0]} | tail -n+2 | awk '{{print $1,$2,$3,$7,$8,$9}}' OFS=' ' | gzip > {output[0]}
         """
 
 
 rule run_torus:
     input:
         annot="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/mixed_variant_annot_ensembl_vep.txt.gz",
-        fastqtl="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/sebeta_all_chunks.txt.gz",
+        fastqtl="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/gtex.allpairs.torus.txt.gz",
     output:
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/torus.out",
     resources:
         mem_gb=4,
-        time_min=120,
-        num_cores=4,
+        time_min=720,
+        num_cores=10,
     shell:
         """
         . /u/local/Modules/default/init/modules.sh

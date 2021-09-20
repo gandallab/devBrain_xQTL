@@ -24,9 +24,7 @@ colnames(dat) <- c("pid","sid","dist","npval","slope")
 
 dat$se <- NA
 # GTEx fastQTL'a calculation of slope_se requires df
-# tested the following code, with and without slope>0, <0 difference, in GTEx v8 Cortex egene file
-# differentiating slope>0, <0 gives high correlation with GTEx slope_se (>0.99)
-# no differentiating cor~0.03
+# tested the code below, high correlation with sebeta from GTEx
 for(i in 1:nrow(dat)) {
     if(dat[i,'slope'] < 0) {
         zscore <- qnorm(dat[i,'npval']/2)

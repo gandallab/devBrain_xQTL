@@ -27,16 +27,14 @@ TYPES = ["end", "ex", "in", "ip", "mic", "opc", "per", "pg", "rg"]
 rule all:
     input:
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz",
-            cell_type="ex",
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_nominal_{num_hcp}hcp/{file}",
+            file=[
+                "all_assoc.txt.gz",
+                "significant_assoc.txt",
+                "significant_feature_count.txt",
+            ],
+            cell_type=TYPES,
             num_hcp=np.arange(10, 101, 10),
-            chunk=np.arange(1, 101, 1),
-        ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_nominal_{num_hcp}hcp/chunk{chunk}.txt.gz.done",
-            cell_type="ex",
-            num_hcp=np.arange(10, 101, 10),
-            chunk=np.arange(1, 101, 1),
         ),
 
 
@@ -105,56 +103,57 @@ rule ct_fastqtl_nominal:
         """
 
 
-# rule cg_merge_nominal:
-#     input:
-#         expand(
-#             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{{cell_group}}_mixed_nominal/chunk{chunk}.txt.gz",
-#             chunk=np.arange(1, 101, 1),
-#         ),
-#         expand(
-#             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{{cell_group}}_mixed_nominal/chunk{chunk}.txt.gz.done",
-#             chunk=np.arange(1, 101, 1),
-#         ),
-#     output:
-#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{cell_group}_mixed_nominal/all.chunks.txt.gz",
-#     resources:
-#         mem_gb=24,
-#         time_min=160,
-#     params:
-#         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{cell_group}_mixed_nominal/",
-#     shell:
-#         """
-#         zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}all.chunks.txt.gz
-#         """
+rule ct_merge_nominal:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{{cell_type}}_nominal_{{num_hcp}}hcp/chunk{chunk}.txt.gz",
+            chunk=np.arange(1, 101, 1),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{{cell_type}}_nominal_{{num_hcp}}hcp/chunk{chunk}.txt.gz.done",
+            chunk=np.arange(1, 101, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_nominal_{num_hcp}hcp/all.chunks.txt.gz",
+    resources:
+        mem_gb=4,
+        num_cores=6,
+        time_min=240,
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_nominal_{num_hcp}hcp/",
+    shell:
+        """
+        zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}all.chunks.txt.gz
+        """
 
 
-# rule cg_call_nominal:
-#     input:
-#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{cell_group}_mixed_nominal/all.chunks.txt.gz",
-#     output:
-#         expand(
-#             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{{cell_group}}_mixed_nominal/{file}",
-#             file=[
-#                 "all_assoc.txt.gz",
-#                 "significant_assoc.txt",
-#                 "significant_feature_count.txt",
-#             ],
-#         ),
-#     resources:
-#         mem_gb=24,
-#         time_min=160,
-#     params:
-#         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/CG_adjusted_{cell_group}_mixed_nominal/",
-#         script="scripts/call_nominal.R",
-#     shell:
-#         """
-#         . /u/local/Modules/default/init/modules.sh
-#         module load R/3.6.0
+rule ct_call_nominal:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_nominal_{num_hcp}hcp/all.chunks.txt.gz",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{{cell_type}}_nominal_{{num_hcp}}hcp/{file}",
+            file=[
+                "all_assoc.txt.gz",
+                "significant_assoc.txt",
+                "significant_feature_count.txt",
+            ],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=160,
+        num_cores=6
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_nominal_{num_hcp}hcp/",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/3.6.0
 
-#         Rscript {params.script} \
-#             --outdir {params.outdir}
-#         gzip {params.outdir}all_assoc.txt
-#         """
+        Rscript scripts/call_nominal.R \
+            --outdir {params.outdir}
+        gzip {params.outdir}all_assoc.txt
+        """
 
 ################################### Cell group interaction ###################################
 # Change SNP position to ID in susie dosage file
