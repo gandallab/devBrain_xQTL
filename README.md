@@ -3,14 +3,14 @@
 #### 1: Munging data
 #### 2: Genotype
 ##### Pre-imputation
-- Run plinkQC on data as sanity check
+- Run plinkQC on data as a sanity check
 - First apply PLINK filters, then split by chromosome and sort
-- Walker data is already filtered; split by chromosome and imputed
-- For all the other datasets, we applied the same filters that the Walker data used `--hwe 1e6 --maf 0.01 --mind 0.10 --geno 0.05`
-- Note: for HDBR, we used `--mind 0.3`; for LIBD, we fixed strand flips by running an extra step of [conform-gt](https://faculty.washington.edu/browning/conform-gt.html), which automatically splits the data by chromosome
+    - Walker data is already filtered; split by chromosome and impute
+    - For all the other datasets, we applied the same filters that the Walker data used `--hwe 1e6 --maf 0.01 --mind 0.10 --geno 0.05`
+    - Note: for HDBR, we used `--mind 0.3`; for LIBD, we fixed strand flips by running an extra step of [conform-gt](https://faculty.washington.edu/browning/conform-gt.html), which automatically splits the data by chromosome
 ##### Post-imputation
-- Scripts in `prelim/`: inputs are imputed genotype files downloaded from Michigan Imputation Server; concatenate by chromosomes, index, filter by R2, and take the **intersection** of high impute quality variants across datasets
-- Note: except for Walker data, we applied R2>.3 filter during imputation; so here we only applied R2>.3 on Walker imputed data and intersected with the other datasets
+- Scripts in `prelim/`: inputs are imputed genotype files downloaded from Michigan Imputation Server; concatenate by chromosomes, index, filter by R2, and take the ***intersection*** of high impute quality variants across datasets
+    - Note: except for Walker data, we applied R2>.3 filter during imputation; so here we only applied R2>.3 on Walker imputed data and intersected with the other datasets
 - `ancestry.ipynb`: infer data ancestry, make plots
 - `IBD.ipynb`: relatedness check
 - `Snakefile`:
@@ -38,7 +38,8 @@ rules:
 ```
 #### 3: RNA-seq
 -   Pre-alignment QC [FastQC v0.11.9](https://github.com/s-andrews/FastQC)
--   Alignment [STAR-2.7.3a](https://github.com/alexdobin/STAR); index with [GENCODE v29lift37](https://www.gencodegenes.org/) genome and annotation; note there is a new run of STAR for sQTL
+-   Alignment [STAR-2.7.3a](https://github.com/alexdobin/STAR), index with [GENCODE v29lift37](https://www.gencodegenes.org/) genome and annotation
+    - Note: there is a new run of STAR for sQTL
 -   Alignment QC [PicardTools 2.21.7](https://github.com/broadinstitute/picard)
 -   Compile FastQC and PicardTools metrics [MultiQC v1.9.dev0](https://github.com/ewels/MultiQC)
 ```
@@ -46,7 +47,7 @@ rules:
 # -d -dd 1: to keep identical sample ID from different folders
 python3 -m multiqc -d -dd 1 Walker/ Obrien Werling_final/ hdbr libd -o all_multiqc
 ```
--   Quantification [Salmon v1.1.0](https://salmon.readthedocs.io/en/latest/); [GENCODE v33lift37](https://www.gencodegenes.org/) decoys-aware index
+-   Quantification [Salmon v1.1.0](https://salmon.readthedocs.io/en/latest/), [GENCODE v33lift37](https://www.gencodegenes.org/) decoys-aware index
 -   Compile and import quantifications [Tximport 1.14.0](https://bioconductor.org/packages/devel/bioc/vignettes/tximport/inst/doc/tximport.html)
 
 ```{R}
@@ -63,7 +64,7 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
     + `check.ipynb`: called SNP from BAM, merged with imputed genotype
 #### 4: xQTL
 ##### cis-eQTL
-- `metadata.ipynb`: plot data demographics, age, sex, infer NA sex, etc.
+- `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
 - `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - `susie_analysis.ipynb`: susie finemapping results
 - `decon_analysis.ipynb`: cell type specific and interacting analysis
@@ -129,33 +130,43 @@ rules:
 cell type specific
     - ct_cov
     - ct_fastqtl_nominal
+    - ct_merge_nominal
     - ct_call_nominal
+    - ct_fastqtl_perm
+    - ct_merge_perm
+    - ct_call_perm
 cell type/group interaction
     - make_decon_dosage
     - snps_to_test
     - fix_decon_dosage
     - run_decon_qtl
 ```
+- `paintor.smk`
+```
+rules:
+```
 ##### cis-isoQTL
 - `isoqtl_analysis.ipynb`
-- `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx
+- `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx did
 ##### cis-sQTL
 - `sqtl_analysis.ipynb`
+- `check.ipynb`: check chunk size
 - `Snakefile`
 ```
 rules:
 STAR
     - index: generate STAR index with Gencode v33, with annotation GTF as recommended
     - See step 1-5 for running STAR, 1st and 2nd pass, WASP filter; Leafcutter bam2junc
-Leafcutter combined ancestry
+Leafcutter
     - cluster: note some output files are not specified here
-    - remove_chr: 
+    - remove_chr
     - write_chr_blacklist
     - pheno_prep: note some output files are not specified here
     - bgzip_tabix
     - concat
     - pheno_process
     - cov
+ALL
     - fastqtl_nominal
     - merge_nominal
     - call_nominal
@@ -244,7 +255,7 @@ APEX trans
 ```
 #### 5: Integrative
 ##### sLDSC 
-- `ldsc_analysis.ipynb`: make partitioned h2 plots
+- `ldsc_analysis.ipynb`
 - `Snakefile`
 ```
 rules:
@@ -259,6 +270,12 @@ SuSiE variants
     (as above)
 Top sQTL
     (as above, note: use top QTL per gene and GTEx grouped permutation results)
+eQTL maxCPP
+    - make_annot_eqtl_maxCPP: make annotation files with maxCPP as continuous annotation
+    - ldsc_eqtl_maxCPP
+    - partition_h2_eqtl_maxCPP
+    - partition_h2_gtex_brain_cortext_maxCPP
+isoQTL_maxCPP
 ```
 ##### TWAS-FUSION
 - `TWAS.ipynb`
@@ -277,6 +294,7 @@ rules:
 - pos_process_rn
 ```
 ##### MESC
+- `MESC.ipynb`
 - `Snakefile`
 ```
 rules:
@@ -292,6 +310,15 @@ Overall gene expression analysis
     - score_all_gene: estimate overall gene expression score
     - h2med_all_gene: estimate h2med
 Overall isoform expression
+    - plink_covar_iso
+    - expr_rel_iso
+    - score_all_iso
+    - h2med_all_iso
+Overall splicing
+    - plink_covar_intron
+    - expr_rel_intron
+    - score_all_intron
+    - h2med_all_intron
 ```
 ------
 ## Data and results
@@ -309,11 +336,17 @@ Overall isoform expression
 
 #### Genotype (`working/geno/`)
 ***Please note some TOPMED variants are not mapped to rsID. They are still in hg38 coordinates as ID (chr:pos). Their coordinates are hg19 in the final genotype file.***
-- AMR, AFR, EUR genotype plink files used for FUSION
-  
-#### Covariates (`working/covariates/`)
+- [x] AMR, AFR, EUR genotype plink files used for FUSION
+- [x] genotype PC EUR
 
-#### cis-eQTL (`output/cis_eQTL_nominal_permutation_conditional_finemapping/`)
+#### Covariates (`working/covariates/`)
+- [x] picard metrics
+- [x] metadata
+
+#### Trimester (`working/EUR_trimester/`)
+- [x] Gene expression, covaraites, genotype. For the 280 EUR with relatives removed, 137 trimester1, 141 trimester2 
+
+#### cis-eQTL (`output/cis_eQTL_nominal_permutation_conditional_finemapping/` and `cis_eQTL_cell_type_specific`)
 * Combined (`shared_90HCP/`)
 - [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
 - [x] Permutation pass: `all_assoc_perm_info.txt`. Filter for significant: `qval < .05`
@@ -329,6 +362,8 @@ Overall isoform expression
 * AFR (`AFR_25HCP/`)
 - [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
 - [x] Permutation pass: `all_assoc_perm_info.txt`. Filter for significant: `qval < .05`
+* Cell type-specific 
+- [x] Permutation pass significant
 
 #### cis-isoQTL (`output/cis_isoQTL_nominal_permutation_conditional_finemapping/`)
 * Combined (`shared_70HCP/`)
@@ -348,12 +383,14 @@ Overall isoform expression
 - [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
 
 #### cis-sQTL (`output/cis_sQTL_nominal_permutation_conditional_finemapping/`)
-* Combined (`shared_35HCP/`)
+* Combined (`shared_35HCP_1e5/`)
 - [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
 - [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
 - [ ] Permutation pass: full list of sQTL with p-value passing nominal threshold: 
 - [ ] Conditional pass: top sQTL per rank: 
 - [ ] SuSiE finemapping; all variants in non-low purity CS: 
+* Combined (`shared_40HCP_1e6/`)
+- [x] Grouped permutation: `group.perm.genes.txt.gz`. Filter for significant: `qval < .05`
 * EUR (`EUR_25HCP/`)
 - [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
 - [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`

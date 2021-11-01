@@ -29,12 +29,18 @@ shared <- pop1 %>% inner_join(pop2, by = "gene_snp")
 dim(shared)
 shared <- shared %>% mutate(group = ifelse(fdr <= 0.05, "sig", "non-sig"))
 
+# eQTL slope correlation
+shared_sig <- shared %>% filter(group == "sig")
+cor <- cor(shared_sig$slope.x, shared_sig$slope.y, method = "spearman")
+
 cols <- c("sig" = "#046C9A", "non-sig" = "#ABDDDE")
 p <- ggplot(shared, aes(x = slope.x, y = slope.y)) +
     geom_point(aes(color = group), alpha = .6, size = .8) +
     theme_classic() +
-    labs(x = paste0(args$pop1_group, " eGene-eQTL effect size"), 
-         y = paste0(args$pop2_group, " effect size")) +
+    labs(x = paste0(args$pop1_group, " effect size"), 
+         y = paste0(args$pop2_group, " effect size"),
+	 title = paste0(args$pop1_group, "-", args$pop2_group, " eQTL"),
+	 subtitle = paste0("Spearman correlation = ", cor)) +
 #     scale_color_manual(values = wes_palette("Darjeeling1"), name = "") +
     scale_color_manual(values = cols, 
                        name = "", 
@@ -42,6 +48,8 @@ p <- ggplot(shared, aes(x = slope.x, y = slope.y)) +
                                   paste0("Nominally non-significant in ", args$pop2_group))) +
     theme(axis.title = element_text(size = 18),
           axis.text = element_text(size = 16),
+	  plot.title = element_text(size = 18, face = "bold", hjust = 0.5),
+        plot.subtitle = element_text(size = 16, hjust = 0.5),
           legend.title = element_text(size = 16),
           legend.text = element_text(size = 14),
           legend.position = c(0.35, 0.95)) +

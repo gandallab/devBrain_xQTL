@@ -29,7 +29,7 @@ permutation pass
     - ancestry_merge_perm
     - call_perm
     - ancestry_call_perm
-GTEX grouped permutation
+GTEX grouped permutation for ALL
     - make_bed_file
     - make_grp_file
     - gtex_fastqtl_grp_perm
@@ -59,69 +59,69 @@ Torus: functional enrichment
 
 rule all:
     input:
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/{file}",
-        #     file=[
-        #         "all_assoc.txt.gz",
-        #         "significant_assoc.txt",
-        #         "significant_feature_count.txt",
-        #     ],
-        #     num_hcp=np.arange(10, 101, 10),
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}",
-        #     file=[
-        #         "all_assoc.txt.gz",
-        #         "significant_assoc.txt",
-        #         "significant_feature_count.txt",
-        #     ],
-        #     num_hcp=np.arange(10, 101, 10),
-        #     ancestry=["eur"],
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}",
-        #     file=[
-        #         "all_assoc.txt.gz",
-        #         "significant_assoc.txt",
-        #         "significant_feature_count.txt",
-        #     ],
-        #     num_hcp=np.arange(5, 51, 5),
-        #     ancestry=["amr", "afr"],
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_perm_70hcp/{file}",
-        #     file=["all_assoc.txt.gz", "sig_pheno.txt"],
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}",
-        #     ancestry=["eur"],
-        #     num_hcp=60,
-        #     file=["all_assoc.txt.gz", "sig_pheno.txt"],
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}",
-        #     ancestry=["amr"],
-        #     num_hcp=15,
-        #     file=["all_assoc.txt.gz", "sig_pheno.txt"],
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}",
-        #     ancestry=["afr"],
-        #     num_hcp=20,
-        #     file=["all_assoc.txt.gz", "sig_pheno.txt"],
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.txt.gz",
-        #     num_hcp=70,
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.genes.txt.gz",
-        #     num_hcp=70,
-        # ),
-        # "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_conditional_70hcp/conditional_full.txt",
-        # "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_conditional_70hcp/conditional_top_variants.txt",
-        # "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_susie_merged.txt",
-        # "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_purity_filtered.txt.gz",
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_{num_hcp}hcp/{file}",
+            file=[
+                "all_assoc.txt.gz",
+                "significant_assoc.txt",
+                "significant_feature_count.txt",
+            ],
+            num_hcp=np.arange(10, 101, 10),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}",
+            file=[
+                "all_assoc.txt.gz",
+                "significant_assoc.txt",
+                "significant_feature_count.txt",
+            ],
+            num_hcp=np.arange(10, 101, 10),
+            ancestry=["eur"],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/{file}",
+            file=[
+                "all_assoc.txt.gz",
+                "significant_assoc.txt",
+                "significant_feature_count.txt",
+            ],
+            num_hcp=np.arange(5, 51, 5),
+            ancestry=["amr", "afr"],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_perm_70hcp/{file}",
+            file=["all_assoc.txt.gz", "sig_pheno.txt"],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}",
+            ancestry=["eur"],
+            num_hcp=60,
+            file=["all_assoc.txt.gz", "sig_pheno.txt"],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}",
+            ancestry=["amr"],
+            num_hcp=15,
+            file=["all_assoc.txt.gz", "sig_pheno.txt"],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/{ancestry}_perm_{num_hcp}HCP/{file}",
+            ancestry=["afr"],
+            num_hcp=20,
+            file=["all_assoc.txt.gz", "sig_pheno.txt"],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.txt.gz",
+            num_hcp=70,
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_grp_perm_{num_hcp}hcp/group.perm.genes.txt.gz",
+            num_hcp=70,
+        ),
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_conditional_70hcp/conditional_full.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_conditional_70hcp/conditional_top_variants.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_susie_merged.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_purity_filtered.txt.gz",
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/torus.out",
 
 
@@ -1204,13 +1204,13 @@ rule run_torus:
     output:
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/mixed_nominal_70hcp/torus.out",
     resources:
-        mem_gb=4,
-        time_min=1440,
+        mem_gb=8,
+        time_min=4320,
         num_cores=12,
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
-        module load python/3.7.2
+        module load python/3.7.3
         /u/project/gandalm/shared/apps/torus-master/src/torus \
             -d {input.fastqtl} \
             --fastqtl \

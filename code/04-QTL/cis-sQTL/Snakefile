@@ -14,15 +14,16 @@ rules:
 STAR
     - index: generate STAR index with Gencode v33, with annotation GTF as recommended
     - See step 1-5 for running STAR, 1st and 2nd pass, WASP filter; Leafcutter bam2junc
-Leafcutter combined ancestry
+Leafcutter
     - cluster: note some output files are not specified here
-    - remove_chr: 
+    - remove_chr
     - write_chr_blacklist
     - pheno_prep: note some output files are not specified here
     - bgzip_tabix
     - concat
     - pheno_process
     - cov
+ALL
     - fastqtl_nominal
     - merge_nominal
     - call_nominal
@@ -73,63 +74,34 @@ Torus: functional enrichment
 
 rule all:
     input:
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp_{window}/{file}",
-        #     num_hcp=np.arange(5, 51, 5),
-        #     window=WINDOWS,
-        #     file=[
-        #         "all_assoc.txt.gz",
-        #         "significant_assoc.txt",
-        #         "significant_feature_count.txt",
-        #     ],
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/all_assoc.txt.gz",
-        #     zip,
-        #     best_num_hcp=[35, 40],
-        #     window=WINDOWS,
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/sig_pheno.txt",
-        #     zip,
-        #     best_num_hcp=[35, 40],
-        #     window=WINDOWS,
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/chunk{chunk}.txt.gz",
-        #     chunk=np.arange(1, 101, 1),
-        #     ancestry="eur",
-        #     num_hcp=np.arange(5, 51, 5),
-        #     window=WINDOWS,
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/chunk{chunk}.txt.gz.done",
-        #     chunk=np.arange(1, 101, 1),
-        #     ancestry="eur",
-        #     num_hcp=np.arange(5, 51, 5),
-        #     window=WINDOWS,
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/chunk{chunk}.txt.gz",
-        #     chunk=np.arange(1, 95, 1),
-        #     ancestry=["amr", "afr"],
-        #     num_hcp=np.arange(2, 21, 2),
-        #     window=WINDOWS,
-        # ),
-        # expand(
-        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/chunk{chunk}.txt.gz.done",
-        #     chunk=np.arange(1, 95, 1),
-        #     ancestry=["amr", "afr"],
-        #     num_hcp=np.arange(2, 21, 2),
-        #     window=WINDOWS,
-        # ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp_{window}/{file}",
+            num_hcp=np.arange(5, 51, 5),
+            window=WINDOWS,
+            file=[
+                "all_assoc.txt.gz",
+                "significant_assoc.txt",
+                "significant_feature_count.txt",
+            ],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/all_assoc.txt.gz",
+            zip,
+            best_num_hcp=[35, 40],
+            window=WINDOWS,
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/sig_pheno.txt",
+            zip,
+            best_num_hcp=[35, 40],
+            window=WINDOWS,
+        ),
         # expand(
         #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/{file}",
         #     ancestry="eur",
         #     num_hcp=np.arange(5, 51, 5),
         #     window=WINDOWS,
         #     file=[
-        #         "all_assoc.txt.gz",
         #         "significant_assoc.txt",
         #         "significant_feature_count.txt",
         #     ],
@@ -140,7 +112,6 @@ rule all:
         #     num_hcp=np.arange(2, 21, 2),
         #     window=WINDOWS,
         #     file=[
-        #         "all_assoc.txt.gz",
         #         "significant_assoc.txt",
         #         "significant_feature_count.txt",
         #     ],
@@ -163,7 +134,7 @@ rule all:
         #     ancestry="afr",
         #     num_hcp=12,
         # ),
-        # "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/all.introns.RData",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/all.introns.RData",
         expand(
             "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_grp_perm_{num_hcp}hcp_{window}/group.perm.txt.gz",
             num_hcp=40,
@@ -233,14 +204,13 @@ rule cluster:
         mem_gb=6,
         time_min=150,
     params:
-        script=config["LEAFCUTTER"] + "clustering/leafcutter_cluster.py",
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load python/2.7.16
         mkdir -p {params.outdir}
-        python {params.script} \
+        python config[LEAFCUTTER]clustering/leafcutter_cluster.py \
             -j {input[0]} \
             -m 50 \
             -l 500000 \
@@ -270,13 +240,11 @@ rule write_chr_blacklist:
     resources:
         mem_gb=6,
         time_min=120,
-    params:
-        script="./scripts/write_chr_blacklist.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/write_chr_blacklist.R \
             --input {input[0]} \
             --output {output[0]}
         """
@@ -302,14 +270,13 @@ rule pheno_prep:
     resources:
         mem_gb=6,
         time_min=120,
-    params:
-        script=config["LEAFCUTTER"] + "scripts/prepare_phenotype_table.py",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load python/2.7.16
         module load htslib/1.9
-        python {params.script} {input[0]} \
+        python config[LEAFCUTTER]scripts/prepare_phenotype_table.py \
+            {input[0]} \
             --ChromosomeBlackList {input[1]}
         """
 
@@ -392,7 +359,6 @@ rule pheno_process:
         mem_gb=6,
         time_min=120,
     params:
-        script="./scripts/pheno_process.R",
         prefix="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all",
         geno_subj_dir="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/geno_subj/",
     shell:
@@ -400,7 +366,7 @@ rule pheno_process:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
         module load htslib/1.9
-        Rscript {params.script} \
+        Rscript scripts/pheno_process.R \
             --prefix {params.prefix} \
             --geno_subj_dir {params.geno_subj_dir}
         bgzip -f {params.prefix}_fixSubj_combat.bed
@@ -422,7 +388,6 @@ rule cov:
         mem_gb=8,
         time_min=120,
     params:
-        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/cov.R",
         num_gpc=5,
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/",
     shell:
@@ -430,7 +395,7 @@ rule cov:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
         mkdir -p {params.outdir}
-        Rscript {params.script} \
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/cov.R \
             --num_hcp {wildcards.num_hcp} \
             --expr {input.expr} \
             --picard {input.picard} \
@@ -441,6 +406,7 @@ rule cov:
         """
 
 
+############################## ALL ##############################
 rule fastqtl_nominal:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/leafcutter_perind.counts.nochr.gz.qqnorm_all_fixSubj_combat.bed.gz",
@@ -509,14 +475,13 @@ rule call_nominal:
         num_cores=16,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp_{window}/",
-        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_nominal.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
         module load htslib/1.9
 
-        Rscript {params.script} \
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_nominal.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         # bgzip {params.outdir}all_assoc.txt
@@ -591,20 +556,18 @@ rule call_perm:
         time_min=120,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_{best_num_hcp}hcp_{window}/",
-        script=(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_perm.R"
-        ),
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_perm.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
 
 
+############################## Ancestry ##############################
 rule ancestry_pheno:
     input:
         expand(
@@ -631,7 +594,6 @@ rule ancestry_pheno:
         mem_gb=6,
         time_min=120,
     params:
-        script="scripts/ancestry_lc.R",
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/{ancestry}/",
         combined_dir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/",
     shell:
@@ -641,7 +603,7 @@ rule ancestry_pheno:
         module load htslib/1.9
 
         mkdir -p {params.outdir}
-        Rscript {params.script} \
+        Rscript scripts/ancestry_lc.R \
             --combined_dir {params.combined_dir} \
             --subj_list {input[4]} \
             --outdir {params.outdir}
@@ -664,7 +626,6 @@ rule ancestry_cov:
         mem_gb=8,
         time_min=60,
     params:
-        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/ancestry_cov.R",
         num_gpc=5,
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/{ancestry}/",
     shell:
@@ -672,7 +633,7 @@ rule ancestry_cov:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/ancestry_cov.R \
             --num_hcp {wildcards.num_hcp} \
             --expr {input.expr} \
             --picard {input.picard} \
@@ -744,24 +705,21 @@ rule ancestry_call_nominal:
         expand(
             "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{{ancestry}}_nominal_{{num_hcp}}HCP_{{window}}/{file}",
             file=[
-                "all_assoc.txt.gz",
                 "significant_assoc.txt",
                 "significant_feature_count.txt",
             ],
         ),
     resources:
-        mem_gb=4,
+        mem_gb=12,
         time_min=250,
-        num_cores=6,
+        num_cores=8,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_nominal_{num_hcp}HCP_{window}/",
-        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_nominal.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
-        module load R/3.6.0
-
-        Rscript {params.script} \
+        module load R/4.1.0-BIO
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_nominal.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
@@ -835,15 +793,12 @@ rule ancestry_call_perm:
         time_min=120,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/{ancestry}_perm_{num_hcp}HCP_{window}/",
-        script=(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_perm.R"
-        ),
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/call_perm.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
@@ -869,13 +824,14 @@ rule prepare_leafviz_annot:
     params:
         out_dir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/",
         out_prefix="gencode_v33lift37",
-        script=config["LEAFCUTTER"] + "leafviz/gtf2leafcutter.pl",
     shell:
         """ 
         . /u/local/Modules/default/init/modules.sh
         module load perl/5.10.1
         mkdir -p {params.out_dir}
-        {params.script} -o {params.out_dir}{params.out_prefix} {config[GTF_FILE]}
+        config[LEAFCUTTER]leafviz/gtf2leafcutter.pl \
+            -o {params.out_dir}{params.out_prefix} \
+            {config[GTF_FILE]}
         """
 
 
@@ -898,14 +854,13 @@ rule annotate_intron:
         num_cores=10,
         time_min=480,
     params:
-        script="scripts/annotate_intron.R",
         annot="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/gencode_v33lift37",
         outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/annotate_intron.R \
             --annot {params.annot} \
             --counts {input.counts} \
             --outdir {params.outdir}
@@ -921,13 +876,11 @@ rule summarise_annot:
         mem_gb=4,
         num_cores=4,
         time_min=360,
-    params:
-        script="scripts/summarise_annot.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/summarise_annot.R \
             --annot {input[0]}
         """
 
@@ -970,13 +923,14 @@ rule prepare_leafviz_annot_exons:
     params:
         out_dir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/",
         out_prefix="gencode_v33lift37_withENSG",
-        script="scripts/gtf2leafcutter_all_exons_ensg.pl",
     shell:
         """ 
         . /u/local/Modules/default/init/modules.sh
         module load perl/5.10.1
         mkdir -p {params.out_dir}
-        {params.script} -o {params.out_dir}{params.out_prefix} {config[GTF_FILE]}
+        scripts/gtf2leafcutter_all_exons_ensg.pl \
+            -o {params.out_dir}{params.out_prefix} \
+            {config[GTF_FILE]}
         """
 
 
@@ -1129,20 +1083,19 @@ rule gtex_grp_perm_merge_chunk:
 ############################## QTLtools conditional pass ##############################
 rule permutations_all_threshold:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_35hcp_{window}/all.chunks.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_40hcp_1e6/all.chunks.txt.gz",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_35hcp_{window}/permutations_all_threshold.txt.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_40hcp_1e6/permutations_all_threshold.txt.gz",
     resources:
         mem_gb=6,
         time_min=120,
     params:
-        script="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/permutations_all_threshold.R",
-        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_35hcp_{window}/",
+        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_40hcp_1e6/",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
-        module load R/3.6.0
-        Rscript {params.script} \
+        module load R/4.1.0-BIO
+        Rscript /u/project/gandalm/cindywen/isoform_twas/eqtl_new/code/scripts/permutations_all_threshold.R \
             --outdir {params.outdir}
         gzip {params.outdir}permutations_all_threshold.txt
         """
@@ -1168,22 +1121,20 @@ rule make_qtltools_bed:
 
 rule conditional:
     input:
-        expr=(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/qtltools.bed.gz"
-        ),
+        expr="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/cluster/qtltools.bed.gz",
         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeRel.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/35hcp_cov.txt",
-        threshold="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_35hcp_{window}/permutations_all_threshold.txt.gz",
+        cov="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/40hcp_cov.txt",
+        threshold="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_perm_40hcp_1e6/permutations_all_threshold.txt.gz",
         rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_35hcp_{window}/chunk{chunk}.txt",
-        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_35hcp_{window}/chunk{chunk}.txt.done",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/chunk{chunk}.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/chunk{chunk}.txt.done",
     resources:
         mem_gb=6,
         time_min=480,
         num_cores=6,
     params:
-        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_35hcp_{window}/",
+        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/",
     shell:
         """
         mkdir -p {params.outdir}
@@ -1205,19 +1156,19 @@ rule conditional:
 rule get_top_variants:
     input:
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_35hcp_{{window}}/chunk{chunk}.txt.done",
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/chunk{chunk}.txt.done",
             chunk=np.arange(1, 101, 1),
         ),
     output:
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_35hcp_{{window}}/{file}",
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/{file}",
             file=["conditional_full.txt", "conditional_top_variants.txt"],
         ),
     resources:
         mem_gb=6,
         time_min=120,
     params:
-        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_35hcp_{window}/",
+        outdir="/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/",
     shell:
         """
         cat {params.outdir}chunk*.txt > {params.outdir}conditional_full.txt
@@ -1424,9 +1375,9 @@ rule run_torus:
     output:
         "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_40hcp_1e6/torus.out",
     resources:
-        mem_gb=4,
-        time_min=120,
-        num_cores=4,
+        mem_gb=32,
+        time_min=4800,
+        num_cores=16,
     shell:
         """
         . /u/local/Modules/default/init/modules.sh

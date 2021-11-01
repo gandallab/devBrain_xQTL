@@ -124,7 +124,7 @@ rule all:
         #     ancestry=["eur", "amr", "afr"],
         #     num_hcp=[50, 15, 25],
         # ),
-        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/locuszoom_{ancestry}_{num_hcp}HCP_chr1_248100768.pdf", zip, ancestry=["eur", "amr", "afr"],num_hcp=[50, 15, 25],),
+        expand("/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/locuszoom_{ancestry}_{num_hcp}HCP_chr15_81279136.pdf", zip, ancestry=["eur", "amr", "afr"],num_hcp=[50, 15, 25]),
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_conditional_90hcp/conditional_full.txt",
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_eur_amr.png",
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/scatter_eur_afr.png",
@@ -1108,9 +1108,9 @@ rule sort_susie_ancestry:
 # can't find matching ones in VCF
 rule locuszoom:
     input:
-        metal="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/ENSG00000196071.all_assoc_METAL.txt",
+        metal="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/ENSG00000117899.all_assoc_METAL.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/locuszoom_{ancestry}_{num_hcp}HCP_chr1_248100768.pdf"
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/locuszoom_{ancestry}_{num_hcp}HCP_chr15_81279136.pdf"
     resources:
         mem_gb=4,
         time_min=60,
@@ -1120,20 +1120,20 @@ rule locuszoom:
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
-        module load R/3.6.0
-        module load python/2.7.16
-        module load htslib/1.9
-        module load plink/1.90b3.45
+        module load R/4.1.0-BIO
+        module load python # 2.7.5
+        module load htslib/1.12
+        module load plink/1.07
         
         # find the FDR closet to 0.05, then signif cutoff is -log10(npval)
         if [[ "{wildcards.ancestry}" == "afr" ]]; then
-            signif=4.502624
+            signif=4.502014
             pop="AFR"
         elif [[ "{wildcards.ancestry}" == "amr" ]]; then
-            signif=4.014945
+            signif=3.976155
             pop="AMR"
         elif [[ "{wildcards.ancestry}" == "eur" ]]; then
-            signif=3.619347
+            signif=3.648817
             pop="EUR"
         fi
         echo ${{pop}}
@@ -1146,7 +1146,7 @@ rule locuszoom:
             --gene-table gencode \
             --build hg19 \
             --metal {input.metal} \
-            --refsnp chr1:248100768 \
+            --refsnp chr15:81279136 \
             --flank 50kb \
             --pop ${{pop}} \
             --source 1000G_Nov2014 \

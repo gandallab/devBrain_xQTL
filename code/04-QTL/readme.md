@@ -60,26 +60,49 @@ PAINTOR: multi-ethnic fine-mapping
     - make_eur_annot: need variant annot for shared variants between EUR, AMR, AFR
     - merge_eur_annot:
 ```
+- `decon.smk`
+```
+rules:
+cell type specific
+    - ct_cov
+    - ct_fastqtl_nominal
+    - ct_merge_nominal
+    - ct_call_nominal
+    - ct_fastqtl_perm
+    - ct_merge_perm
+    - ct_call_perm
+cell type/group interaction
+    - make_decon_dosage
+    - snps_to_test
+    - fix_decon_dosage
+    - run_decon_qtl
+```
+- `paintor.smk`
+```
+rules:
+```
 ## cis-isoQTL
 - `isoqtl_analysis.ipynb`
 - `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx
 ## cis-sQTL
 - `sqtl_analysis.ipynb`
+- `check.ipynb`: check chunk size
 - `Snakefile`
 ```
 rules:
 STAR
     - index: generate STAR index with Gencode v33, with annotation GTF as recommended
     - See step 1-5 for running STAR, 1st and 2nd pass, WASP filter; Leafcutter bam2junc
-Leafcutter combined ancestry
+Leafcutter
     - cluster: note some output files are not specified here
-    - remove_chr: 
+    - remove_chr
     - write_chr_blacklist
     - pheno_prep: note some output files are not specified here
     - bgzip_tabix
     - concat
     - pheno_process
     - cov
+ALL
     - fastqtl_nominal
     - merge_nominal
     - call_nominal

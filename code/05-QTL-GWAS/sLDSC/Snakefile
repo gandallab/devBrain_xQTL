@@ -21,6 +21,12 @@ SuSiE variants
     (as above)
 Top sQTL
     (as above, note: use top QTL per gene and GTEx grouped permutation results)
+eQTL maxCPP
+    - make_annot_eqtl_maxCPP: make annotation files with maxCPP as continuous annotation
+    - ldsc_eqtl_maxCPP
+    - partition_h2_eqtl_maxCPP
+    - partition_h2_gtex_brain_cortext_maxCPP
+isoQTL_maxCPP
 """
 
 GWAS_DIC = {s["trait"]: s["file"] for s in config["GWAS_LIST"]}
@@ -66,6 +72,21 @@ rule all:
             window=0,
             GWAS_trait="SCZ.Clozuk.2018",
         ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{GWAS_trait}_mixed_eqtl_maxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+            GWAS_trait="SCZ.Clozuk.2018",
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{GWAS_trait}_Brain_Cortex_Analysis_MaxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+            GWAS_trait="SCZ.Clozuk.2018",
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{GWAS_trait}_mixed_isoqtl_maxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+            GWAS_trait="SCZ.Clozuk.2018",
+        ),
 
 
 # also made variant info files for ancestries
@@ -74,15 +95,11 @@ rule make_coord_file:
     input:
         vcf="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.vcf.gz",
     output:
-        info=(
-            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_info.tsv"
-        ),
+        info="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_info.tsv",
         coord="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_coord.tsv",
     resources:
         mem_gb=4,
         time_min=120,
-    params:
-        script="scripts/variant_coord.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
@@ -90,7 +107,7 @@ rule make_coord_file:
         module load R/3.6.0
 
         bcftools query -f '%CHROM %POS %ID\n' {input.vcf} -o {output.info}
-        Rscript {params.script} \
+        Rscript scripts/variant_coord.R \
             --info {output.info} \
             --out {output.coord}
         """
@@ -107,13 +124,11 @@ rule make_set_file_mixed_top_eqtl:
     resources:
         mem_gb=4,
         time_min=60,
-    params:
-        script="scripts/set_file.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/set_file.R \
             --input {input.input_file} \
             --out {output.set_file}
         """
@@ -136,7 +151,6 @@ rule make_annot_mixed_top_eqtl:
     params:
         annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
         annot_prefix="mixed_top_eqtl_{window}bp_window",
-        script="scripts/make_annot_customed.py",
     shell:
         """
         mkdir -p {params.annot_dir}
@@ -145,7 +159,7 @@ rule make_annot_mixed_top_eqtl:
         source ~/anaconda3/bin/activate ldsc
 
         echo "Make ldsc-friendly annotation files"
-        {params.script} \
+        scripts/make_annot_customed.py \
             --gene-set-file {input.set_file} \
             --gene-coord-file {input.coord_file} \
             --bimfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num}.bim \
@@ -221,13 +235,11 @@ rule make_set_file_mixed_top_isoqtl:
     resources:
         mem_gb=4,
         time_min=60,
-    params:
-        script="scripts/set_file_isoqtl.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/set_file_isoqtl.R \
             --input {input.input_file} \
             --out {output.set_file} \
             --tx2gene {input.tx2gene} \
@@ -270,7 +282,6 @@ rule make_annot_mixed_top_isoqtl:
     params:
         annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
         annot_prefix="mixed_top_isoqtl_{window}bp_window",
-        script="scripts/make_annot_customed.py",
     shell:
         """
         mkdir -p {params.annot_dir}
@@ -279,7 +290,7 @@ rule make_annot_mixed_top_isoqtl:
         source ~/anaconda3/bin/activate ldsc
 
         echo "Make ldsc-friendly annotation files"
-        {params.script} \
+        scripts/make_annot_customed.py \
             --gene-set-file {input.set_file} \
             --gene-coord-file {input.coord_file} \
             --bimfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num}.bim \
@@ -317,7 +328,6 @@ rule make_annot_top_isoqtl_grp_perm:
     params:
         annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
         annot_prefix="mixed_top_isoqtl_grp_perm_{window}bp",
-        script="scripts/make_annot_customed.py",
     shell:
         """
         mkdir -p {params.annot_dir}
@@ -326,7 +336,7 @@ rule make_annot_top_isoqtl_grp_perm:
         source ~/anaconda3/bin/activate ldsc
 
         echo "Make ldsc-friendly annotation files"
-        {params.script} \
+        scripts/make_annot_customed.py \
             --gene-set-file {input.set_file} \
             --gene-coord-file {input.coord_file} \
             --bimfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num}.bim \
@@ -388,6 +398,7 @@ rule partition_h2_mixed_top_isoqtl:
         set -eu
         """
 
+
 rule partition_h2_top_isoqtl_grp_perm:
     input:
         expand(
@@ -434,21 +445,17 @@ rule partition_h2_top_isoqtl_grp_perm:
 rule make_set_file_mixed_susie:
     input:
         susie="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm_purity_filtered.txt.gz",
-        info=(
-            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_info.tsv"
-        ),
+        info="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_variant_info.tsv",
     output:
         set_file="/u/project/gandalm/cindywen/isoform_twas/sLDSC/data/mixed_susie_var_in_cs.txt",
     resources:
         mem_gb=6,
         time_min=60,
-    params:
-        script="scripts/set_file_susie.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/set_file_susie.R \
             --susie {input.susie} \
             --info {input.info} \
             --out {output.set_file}
@@ -470,7 +477,6 @@ rule make_annot_mixed_susie:
     params:
         annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
         annot_prefix="mixed_susie_{window}bp_window",
-        script="scripts/make_annot_customed.py",
     shell:
         """
         mkdir -p {params.annot_dir}
@@ -479,7 +485,7 @@ rule make_annot_mixed_susie:
         source ~/anaconda3/bin/activate ldsc
 
         echo "Make ldsc-friendly annotation files"
-        {params.script} \
+        scripts/make_annot_customed.py \
             --gene-set-file {input.set_file} \
             --gene-coord-file {input.coord_file} \
             --bimfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num}.bim \
@@ -596,7 +602,6 @@ rule make_annot_mixed_top_sqtl:
     params:
         annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
         annot_prefix="mixed_top_sqtl_{window}bp_window",
-        script="scripts/make_annot_customed.py",
     shell:
         """
         mkdir -p {params.annot_dir}
@@ -605,7 +610,7 @@ rule make_annot_mixed_top_sqtl:
         source ~/anaconda3/bin/activate ldsc
 
         echo "Make ldsc-friendly annotation files"
-        {params.script} \
+        scripts/make_annot_customed.py \
             --gene-set-file {input.set_file} \
             --gene-coord-file {input.coord_file} \
             --bimfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num}.bim \
@@ -643,7 +648,6 @@ rule make_annot_top_sqtl_grp_perm:
     params:
         annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
         annot_prefix="mixed_top_sqtl_grp_perm_{window}bp",
-        script="scripts/make_annot_customed.py",
     shell:
         """
         mkdir -p {params.annot_dir}
@@ -652,7 +656,7 @@ rule make_annot_top_sqtl_grp_perm:
         source ~/anaconda3/bin/activate ldsc
 
         echo "Make ldsc-friendly annotation files"
-        {params.script} \
+        scripts/make_annot_customed.py \
             --gene-set-file {input.set_file} \
             --gene-coord-file {input.coord_file} \
             --bimfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num}.bim \
@@ -714,6 +718,7 @@ rule partition_h2_mixed_top_sqtl:
         set -eu
         """
 
+
 rule partition_h2_top_sqtl_grp_perm:
     input:
         expand(
@@ -752,5 +757,225 @@ rule partition_h2_top_sqtl_grp_perm:
             --print-delete-vals \
             --out {params.out_dir}{wildcards.GWAS_trait}_{params.annot_prefix}
 
+        set -eu
+        """
+
+
+################### susie eQTL maxCPP ###################
+rule make_annot_eqtl_maxCPP:
+    input:
+        susie="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/mixed_ciseqtl_90hcp_perm_purity_filtered.txt.gz",
+        bim="/u/project/gandalm/shared/apps/ldsc/LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{chr_num}.bim",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_eqtl_maxCPP.{chr_num}.annot.gz",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_eqtl_maxCPP.{chr_num}.annot",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/make_annot_maxcpp.R \
+            --susie {input.susie} \
+            --bim {input.bim} \
+            --annot {params.out}
+        gzip {params.out}
+        """
+
+
+rule ldsc_eqtl_maxCPP:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_eqtl_maxCPP.{chr_num}.annot.gz",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_eqtl_maxCPP.{{chr_num}}.{file}",
+            file=["l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="mixed_eqtl_maxCPP",
+    shell:
+        """
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+        {config[LDSC_PATH]}ldsc.py \
+            --l2 \
+            --bfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num} \
+            --print-snps {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/print_snps.txt \
+            --ld-wind-cm 1 \
+            --annot {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}.annot.gz \
+            --out {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}
+        set -eu
+        """
+
+
+rule partition_h2_eqtl_maxCPP:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_eqtl_maxCPP.{chr_num}.{file}",
+            file=["l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+            chr_num=np.arange(1, 23, 1),
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{{GWAS_trait}}_mixed_eqtl_maxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/",
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="mixed_eqtl_maxCPP",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+        {config[LDSC_PATH]}ldsc.py \
+            --h2 {params.GWAS_file}.sumstats.gz \
+            --ref-ld-chr {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/baseline.,{params.annot_dir}{params.annot_prefix}. \
+            --frqfile-chr {config[LDSC_PATH]}LDSCORE/1000G_Phase3_frq/1000G.EUR.QC. \
+            --w-ld-chr {config[LDSC_PATH]}LDSCORE/weights_hm3_no_hla/weights. \
+            --overlap-annot \
+            --print-cov \
+            --print-coefficients \
+            --print-delete-vals \
+            --out {params.out_dir}{wildcards.GWAS_trait}_{params.annot_prefix}
+        set -eu
+        """
+
+
+rule partition_h2_gtex_brain_cortext_maxCPP:
+    input:
+        expand(
+            "/u/project/gandalm/shared/LDSCORE/LDSC_QTL/Annot/Brain_Cortex_Analysis_MaxCPP/Brain_Cortex_Analysis_MaxCPP.{chr_num}.{file}",
+            file=["l2.ldscore.gz", "l2.M", "l2.M_5_50", "log", "annot"],
+            chr_num=np.arange(1, 23, 1),
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{{GWAS_trait}}_Brain_Cortex_Analysis_MaxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/",
+        annot_dir="/u/project/gandalm/shared/LDSCORE/LDSC_QTL/Annot/Brain_Cortex_Analysis_MaxCPP/",
+        annot_prefix="Brain_Cortex_Analysis_MaxCPP",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+        {config[LDSC_PATH]}ldsc.py \
+            --h2 {params.GWAS_file}.sumstats.gz \
+            --ref-ld-chr {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/baseline.,{params.annot_dir}{params.annot_prefix}. \
+            --frqfile-chr {config[LDSC_PATH]}LDSCORE/1000G_Phase3_frq/1000G.EUR.QC. \
+            --w-ld-chr {config[LDSC_PATH]}LDSCORE/weights_hm3_no_hla/weights. \
+            --overlap-annot \
+            --print-cov \
+            --print-coefficients \
+            --print-delete-vals \
+            --out {params.out_dir}{wildcards.GWAS_trait}_{params.annot_prefix}
+        set -eu
+        """
+
+
+################### susie isoQTL maxCPP ###################
+rule make_annot_isoqtl_maxCPP:
+    input:
+        susie="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/mixed_cisisoqtl_70hcp_perm_purity_filtered.txt.gz",
+        bim="/u/project/gandalm/shared/apps/ldsc/LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{chr_num}.bim",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_isoqtl_maxCPP.{chr_num}.annot.gz",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_isoqtl_maxCPP.{chr_num}.annot",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/make_annot_maxcpp.R \
+            --susie {input.susie} \
+            --bim {input.bim} \
+            --annot {params.out}
+        gzip {params.out}
+        """
+
+
+rule ldsc_isoqtl_maxCPP:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_isoqtl_maxCPP.{chr_num}.annot.gz",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_isoqtl_maxCPP.{{chr_num}}.{file}",
+            file=["l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="mixed_isoqtl_maxCPP",
+    shell:
+        """
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+        {config[LDSC_PATH]}ldsc.py \
+            --l2 \
+            --bfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num} \
+            --print-snps {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/print_snps.txt \
+            --ld-wind-cm 1 \
+            --annot {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}.annot.gz \
+            --out {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}
+        set -eu
+        """
+
+
+rule partition_h2_isoqtl_maxCPP:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/mixed_isoqtl_maxCPP.{chr_num}.{file}",
+            file=["l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+            chr_num=np.arange(1, 23, 1),
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{{GWAS_trait}}_mixed_isoqtl_maxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/",
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="mixed_isoqtl_maxCPP",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+        {config[LDSC_PATH]}ldsc.py \
+            --h2 {params.GWAS_file}.sumstats.gz \
+            --ref-ld-chr {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/baseline.,{params.annot_dir}{params.annot_prefix}. \
+            --frqfile-chr {config[LDSC_PATH]}LDSCORE/1000G_Phase3_frq/1000G.EUR.QC. \
+            --w-ld-chr {config[LDSC_PATH]}LDSCORE/weights_hm3_no_hla/weights. \
+            --overlap-annot \
+            --print-cov \
+            --print-coefficients \
+            --print-delete-vals \
+            --out {params.out_dir}{wildcards.GWAS_trait}_{params.annot_prefix}
         set -eu
         """

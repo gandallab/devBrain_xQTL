@@ -3,6 +3,7 @@
 # QTLtools conditional need npval threshold for all expressed genes
 # refer to qtltools/script/runFDR_cis.R and our code call_perm.R
 # keep genes with no cis-variants, they'll have NA as npval threshold
+# tested this script with GTEx data, cor=1 with GTEx summary stats pval_nominal_threshold
 
 suppressMessages(library(argparser))
 suppressMessages(library(data.table))

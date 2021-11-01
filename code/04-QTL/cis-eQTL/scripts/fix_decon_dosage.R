@@ -18,7 +18,7 @@ dosage <- dosage[,-1]
 sample <- read.table(args$sample, header = F, stringsAsFactors = F )
 colnames(dosage) <- sample$V1
 
-# Column names (i.e. subject IDs) of dosage, cell count, and expression files should be in the same order
+# Column names (i.e. subject IDs) of dosage, cell count, and expression files must be in the same order
 cg <- fread(args$cellcount, data.table = F)
 dosage <- dosage[,cg$V1]
 

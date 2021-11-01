@@ -15,6 +15,12 @@ SuSiE variants
     (as above)
 Top sQTL
     (as above, note: use top QTL per gene and GTEx grouped permutation results)
+eQTL maxCPP
+    - make_annot_eqtl_maxCPP: make annotation files with maxCPP as continuous annotation
+    - ldsc_eqtl_maxCPP
+    - partition_h2_eqtl_maxCPP
+    - partition_h2_gtex_brain_cortext_maxCPP
+isoQTL_maxCPP
 ```
 ## TWAS-FUSION
 - `TWAS.ipynb`
@@ -33,6 +39,7 @@ rules:
 - pos_process_rn
 ```
 ## MESC
+- `MESC.ipynb`
 - `Snakefile`
 ```
 rules:
@@ -48,4 +55,13 @@ Overall gene expression analysis
     - score_all_gene: estimate overall gene expression score
     - h2med_all_gene: estimate h2med
 Overall isoform expression
+    - plink_covar_iso
+    - expr_rel_iso
+    - score_all_iso
+    - h2med_all_iso
+Overall splicing
+    - plink_covar_intron
+    - expr_rel_intron
+    - score_all_intron
+    - h2med_all_intron
 ```
