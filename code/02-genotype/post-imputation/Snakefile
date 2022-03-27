@@ -25,6 +25,7 @@ rules:
     remove_tx_expr_outlier and ancestry_remove_tx_expr_outlier: prepare genotype file for FastQTL
     add_chr: for STAR 2nd pass 
     get_maf: for susie ancestry analysis, get MAF of variants
+    make_plink
 """
 
 
@@ -78,6 +79,17 @@ rule all:
             config["GENO_DIR"] + "ancestry/{ancestry}/maf.gz",
             ancestry=["eur", "amr", "afr"],
         ),
+        expand(
+            config["GENO_DIR"]
+            + "ancestry/filtered.hg19.sorted.removeGeneOutlier.{suffix}",
+            suffix=["bed", "bim", "fam", "log"],
+        ),
+        expand(
+            config["GENO_DIR"]
+            + "ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.mac10.{suffix}",
+            suffix=["bed", "bim", "fam"],
+            ancestry=["eur", "amr", "afr"],
+        ),
 
 
 rule walker_subj:
@@ -119,6 +131,7 @@ rule reheader:
 
 # could have used --keep-allele-order or plink2
 # now variants with ALT as major in the data got REF/ALT swapped (plink1.9 default), and excluded in crossmap (with tag REF==ALT in unmap file)
+# 2/15/2022 update: somehow when later BIM files were generated from the VCF, REF got to allele1, ALT as allele2 (see eCAVIAR.ipynb, example rs10906012)
 rule convert_to_plink:
     input:
         vcf=config["GENO_DIR"] + "ancestry/merge.reheader.vcf.gz",
@@ -348,11 +361,14 @@ rule plink_to_vcf:
 # Program: CrossMap (v0.5.2)
 # ref="/u/home/c/cindywen/project-gandalm/isoform_twas/genotype/ref/hg19.fa"
 # chain_file="/u/home/c/cindywen/project-gandalm/isoform_twas/genotype/ref/hg38ToHg19.over.chain.gz"
-# Don't use these. Will get unspecified contigs. (gl_random...). Don't mix up GRChxxx files and hgxxx files
+# Don't use these UCSC files. Got unspecified contigs. (gl_random...). Maybe it's imputed? Or down-liftovering?
+# Don't mix up GRChxxx files and hgxxx files
 rule crossmap:
     input:
         vcf=config["GENO_DIR"] + "ancestry/filtered.vcf.gz",
-        chain_file="/u/project/gandalm/cindywen/isoform_twas/genotype/ref/GRCh38_to_GRCh37.chain.gz",
+        chain_file=(
+            "/u/project/gandalm/shared/refGenomes/hg38/GRCh38_to_GRCh37.chain.gz"
+        ),
         ref="/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome.fa",
     output:
         expand(
@@ -435,8 +451,8 @@ rule checkvcf:
         """
         . /u/local/Modules/default/init/modules.sh
         module load python/2.7.16
-        mkdir -p {config[GENO_DIR]}/ancestry/checkVCF
-        python2 {config[CHECK_VCF]} -r {input.ref} -o {config[GENO_DIR]}/ancestry/checkVCF/filtered.hg19.sorted {input.vcf}
+        mkdir -p {config[GENO_DIR]}ancestry/checkVCF
+        python2 {config[CHECK_VCF]} -r {input.ref} -o {config[GENO_DIR]}ancestry/checkVCF/filtered.hg19.sorted {input.vcf}
         """
 
 
@@ -646,7 +662,9 @@ rule plink_to_vcf_ancestry:
 rule crossmap_ancestry:
     input:
         vcf=config["GENO_DIR"] + "ancestry/{ancestry}/filtered.vcf.gz",
-        chain_file="/u/project/gandalm/cindywen/isoform_twas/genotype/ref/GRCh38_to_GRCh37.chain.gz",
+        chain_file=(
+            "/u/project/gandalm/shared/refGenomes/hg38/GRCh38_to_GRCh37.chain.gz"
+        ),
         ref="/u/project/gandalm/shared/refGenomes/hg19/Gencode/GRCh37.primary_assembly.genome.fa",
     output:
         expand(
@@ -727,8 +745,8 @@ rule checkvcf_ancestry:
         """
         . /u/local/Modules/default/init/modules.sh
         module load python/2.7.16
-        mkdir -p {config[GENO_DIR]}/ancestry/{wildcards.ancestry}/checkVCF
-        python2 {config[CHECK_VCF]} -r {input.ref} -o {config[GENO_DIR]}/ancestry/{wildcards.ancestry}/checkVCF/filtered.hg19.sorted {input.vcf}
+        mkdir -p {config[GENO_DIR]}ancestry/{wildcards.ancestry}/checkVCF
+        python2 {config[CHECK_VCF]} -r {input.ref} -o {config[GENO_DIR]}ancestry/{wildcards.ancestry}/checkVCF/filtered.hg19.sorted {input.vcf}
         """
 
 
@@ -1036,7 +1054,8 @@ rule add_chr:
         tabix -p vcf {output[0]}
         """
 
-# See ~/project-gandalm/isoform_twas/genotype/temp/ and susie_analysis.ipynb 
+
+# See ~/project-gandalm/isoform_twas/genotype/temp/ and susie_analysis.ipynb
 # used MAF for pre-filtered ancestry genotype file, or there are variants that are absent in one ancestry for not passing variant QC
 rule get_maf:
     input:
@@ -1057,4 +1076,59 @@ rule get_maf:
         module load htslib/1.10.2
 
         bcftools +fill-tags {input[0]} -- -t MAF | bcftools query -f '%CHROM\t%POS\t%REF\t%ALT\t%MAF\n' | bgzip -c > {output[0]}
+        """
+
+
+rule make_plink:
+    input:
+        config["GENO_DIR"] + "ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",
+    output:
+        expand(
+            config["GENO_DIR"]
+            + "ancestry/filtered.hg19.sorted.removeGeneOutlier.{suffix}",
+            suffix=["bed", "bim", "fam", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b624
+        plink --vcf {input[0]} \
+            --make-bed \
+            --out {config[GENO_DIR]}ancestry/filtered.hg19.sorted.removeGeneOutlier
+        """
+
+
+# 1. for small N, should have used MAC filter
+# 2. after removing relatives and outliers, some variants have MAF<0.01
+# should have re-filter variants after removal
+# ~30k variants in removeGeneOutlier file do not pass MAF>0.01
+# eqtl_new/code/ancestry.ipynb some variants have low MAC, log2aFC near y-axis
+rule get_mac:
+    input:
+        expand(
+            config["GENO_DIR"]
+            + "ancestry/{{ancestry}}/filtered.hg19.sorted.removeGeneOutlier.{suffix}",
+            suffix=["vcf.gz", "vcf.gz.tbi"],
+        ),
+    output:
+        expand(
+            config["GENO_DIR"]
+            + "ancestry/{{ancestry}}/filtered.hg19.sorted.removeGeneOutlier.mac10.{suffix}",
+            suffix=["bed", "bim", "fam"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=120,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load plink/1.90b624
+        plink --vcf {input[0]} \
+              --mac 10 \
+              --keep-allele-order \
+              --make-bed \
+              --out /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{wildcards.ancestry}/filtered.hg19.sorted.removeGeneOutlier.mac10
         """

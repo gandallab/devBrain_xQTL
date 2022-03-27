@@ -18,6 +18,12 @@ cell type specific
     - ct_fastqtl_perm
     - ct_merge_perm
     - ct_call_perm
+susie fine-mapping
+    - make_susie_meta
+    - make_susie_expr
+    - run_susie
+    - merge_susie
+    - run_susie
 cell type/group interaction
     - make_decon_dosage
     - snps_to_test
@@ -42,14 +48,26 @@ rule all:
         ),
         expand(
             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_perm_{num_hcp}hcp/all_assoc.txt.gz",
-            zip, 
-            cell_type=TYPES, 
+            zip,
+            cell_type=TYPES,
             num_hcp=[100, 90, 90, 80, 80, 80, 70, 80, 100],
         ),
         expand(
             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_perm_{num_hcp}hcp/sig_pheno.txt",
-            zip, 
-            cell_type=TYPES, 
+            zip,
+            cell_type=TYPES,
+            num_hcp=[100, 90, 90, 80, 80, 80, 70, 80, 100],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{cell_type}/{cell_type}_{num_hcp}hcp_susie_merged.txt",
+            zip,
+            cell_type=TYPES,
+            num_hcp=[100, 90, 90, 80, 80, 80, 70, 80, 100],
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{cell_type}/{cell_type}_{num_hcp}hcp_purity_filtered.txt.gz",
+            zip,
+            cell_type=TYPES,
             num_hcp=[100, 90, 90, 80, 80, 80, 70, 80, 100],
         ),
         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/decon/deconvolutionResults.csv",
@@ -173,6 +191,7 @@ rule ct_call_nominal:
         gzip {params.outdir}all_assoc.txt
         """
 
+
 # Celine ran this in bash script
 rule ct_fastqtl_perm:
     input:
@@ -205,6 +224,7 @@ rule ct_fastqtl_perm:
         touch {output[0]}.done
         """
 
+
 rule ct_merge_perm:
     input:
         expand(
@@ -226,6 +246,7 @@ rule ct_merge_perm:
         """
         zcat {params.outdir}chunk*.txt.gz | gzip -c > {params.outdir}all.chunks.txt.gz
         """
+
 
 rule ct_call_perm:
     input:
@@ -250,6 +271,153 @@ rule ct_call_perm:
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
+
+
+################################### susie fine-mapping ###################################
+rule make_susie_meta:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/end.bed.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/phenotype_meta.tsv",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/sample_meta.tsv",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/make_susie_meta.R \
+            --bed {input[0]} \
+            --exclude_rel {input[1]} \
+            --qtl_group "decon"
+        """
+
+
+rule make_susie_expr:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/{cell_type}.bed.gz",
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/{cell_type}.susie.tsv",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        outname="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/{cell_type}.susie.tsv",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/make_susie_expr_bed.R \
+            --input {input[0]} \
+            --outname {params.outname} \
+            --exclude_rel {input[1]}
+        """
+
+
+# expr N=629
+# geno N=629
+# cov can include relatives
+rule run_susie:
+    input:
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/{cell_type}.susie.tsv",
+        pheno_meta="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/phenotype_meta.tsv",
+        sample_meta="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/sample_meta.tsv",
+        sig_pheno="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{cell_type}_perm_{num_hcp}hcp/sig_pheno.txt",
+        genotype_matrix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.dose.tsv.gz",
+        covariates="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/deconv/{cell_type}_{num_hcp}HCP_cov.txt",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{{cell_type}}/{{cell_type}}_{{num_hcp}}hcp.{{batch}}_"
+            + config["SUSIE_N_BATCH"]
+            + ".{file}",
+            file=["txt", "cred.txt", "snp.txt"],
+        ),
+    resources:
+        mem_gb=4,
+        num_cores=4,
+        time_min=120,
+    params:
+        cisdistance=1000000,
+        permuted="true",
+        qtl_group="decon",
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{cell_type}/",
+        quant_method="gene_counts",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        # mkdir -p {params.out_dir}
+
+        Rscript scripts/run_susie_customized.R \
+            --expression_matrix {input.expr} \
+            --phenotype_meta {input.pheno_meta} \
+            --sample_meta {input.sample_meta} \
+            --sig_pheno {input.sig_pheno} \
+            --covariates {input.covariates} \
+            --genotype_matrix {input.genotype_matrix} \
+            --chunk '{wildcards.batch} {config[SUSIE_N_BATCH]}' \
+            --cisdistance {params.cisdistance} \
+            --out_prefix {params.out_dir}{wildcards.cell_type}_{wildcards.num_hcp}hcp.{wildcards.batch}_{config[SUSIE_N_BATCH]} \
+            --permuted {params.permuted} \
+            --qtl_group {params.qtl_group} \
+            --quant_method {params.quant_method}
+        """
+
+
+rule merge_susie:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{{cell_type}}/{{cell_type}}_{{num_hcp}}hcp.{batch}_"
+            + config["SUSIE_N_BATCH"]
+            + ".{file}",
+            file=["txt", "cred.txt", "snp.txt"],
+            batch=np.arange(1, 501, 1),
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{{cell_type}}/{{cell_type}}_{{num_hcp}}hcp.{file}",
+            file=["txt.gz", "cred.txt.gz"],
+        ),
+    resources:
+        mem_gb=6,
+        time_min=120,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{cell_type}/{cell_type}_{num_hcp}hcp",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.12
+        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.txt | bgzip -c > {params.prefix}.txt.gz
+        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.cred.txt | bgzip -c > {params.prefix}.cred.txt.gz
+        # awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.snp.txt | bgzip -c > {params.prefix}.snp.txt.gz
+        """
+
+
+rule sort_susie:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{{cell_type}}/{{cell_type}}_{{num_hcp}}hcp.{file}",
+            file=["txt.gz", "cred.txt.gz"],
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{cell_type}/{cell_type}_{num_hcp}hcp_susie_merged.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{cell_type}/{cell_type}_{num_hcp}hcp_purity_filtered.txt.gz",
+    resources:
+        mem_gb=6,
+        time_min=120,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/{cell_type}/{cell_type}_{num_hcp}hcp",
+    shell:
+        """ 
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.12
+        gunzip -c {input[0]} > {params.prefix}_susie_merged.txt
+        (head -n 1 {params.prefix}_susie_merged.txt && tail -n +2 {params.prefix}_susie_merged.txt | sort -k3 -k4n ) | bgzip > {params.prefix}_purity_filtered.txt.gz
+        """
+
 
 ################################### Cell group interaction ###################################
 # Change SNP position to ID in susie dosage file
@@ -280,6 +448,7 @@ rule make_decon_dosage:
         # Select columns
         cut -f2,11-639 {output[0]} | bgzip > {output[1]}
         """
+
 
 # not using this
 # rule remove_id:

@@ -22,4 +22,4 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 ```
 -   Sample swap check: 
     + [VerifyBamID](https://genome.sph.umich.edu/wiki/VerifyBamID) (slow. Use `--smID` to add subject ID to BAM sequence file)
-    + `check.ipynb`: called SNP from BAM, merged with imputed genotype
+    + `check.ipynb`: called SNP from BAM, merged with imputed genotype (Mike)

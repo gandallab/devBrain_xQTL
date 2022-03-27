@@ -7,11 +7,13 @@ FUSION_SUSIE_SCRIPT: "/u/project/gandalm/cindywen/isoform_twas/TWAS/code/twas_su
 FUSION_ASSOC_SCRIPT: "/u/project/gandalm/shared/TWAS/code/FUSION.assoc_test.R"
 FUSION_POST_SCRIPT: "/u/project/gandalm/shared/TWAS/code/FUSION.post_process.R"
 # LDREF
-LDREF: "/u/project/gandalm/shared/TWAS/code/LDREF"
+# LDREF: "/u/project/gandalm/shared/TWAS/code/LDREF"
 
 GWAS_LIST:
 - file: /u/project/gandalm/shared/GWAS/SCZ.Pardinas.PGC.2018/SCZ.Clozuk.2018
   trait: SCZ.Clozuk.2018
+- file: /u/project/gandalm/shared/GWAS/SCZ.PGC3.2021/PGC3_SCZ_wave3_public.v2
+  trait: PGC3_SCZ_wave3_public.v2
 # - file: /u/project/gandalm/shared/GWAS/ASD.Grove.iPSYCHPGC.2019/ASD.iPSYCHPGC.2018
 #   trait: ASD.iPSYCHPGC.2018
 # - file: /u/project/gandalm/shared/GWAS/Intelligence.Savage.2018/Intelligence.SavageNatGen.2018
@@ -26,3 +28,9 @@ GWAS_LIST:
 #   trait: BD.PGC3
 # - file: /u/project/gandalm/shared/GWAS/MDD.Wray.PGC.2018/MDD.PGC.2018
 #   trait: MDD.PGC.2018
+
+GWAS_N_LIST:
+- gwas_n: 161405
+  trait: PGC3_SCZ_wave3_public.v2
+- gwas_n: 107000
+  trait: SCZ.Clozuk.2018

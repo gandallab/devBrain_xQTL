@@ -1,12 +1,18 @@
 # QTL
 ## cis-eQTL
-- `metadata.ipynb`: plot data demographics, age, sex, infer NA sex, etc.
+- `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
 - `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
-- `susie_analysis.ipynb`: susie finemapping results
-- `decon_analysis.ipynb`: cell type specific and interacting analysis
-- `cell_specific_analysis.ipynb`: (OUTDATED) cell type/group specific and interaction results
+- `susie.ipynb`: susie finemapping results
+- `decon.ipynb`: cell type specific and interacting analysis
+- `cell_specific.ipynb`: (OUTDATED) cell type/group specific and interaction results
 - `func_enrich.ipynb`: functional enrichment analysis of QTL
 - `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
+- `fetal_adult.ipynb`
+- `paintor.smk`
+- `pLI.ipynb`
+- `sex_specific.ipynb`
+-  `SV.ipynb`
+- `tri_specific.ipynb`
 - `Snakefile`
 ```
 prep
@@ -83,6 +89,7 @@ rules:
 ```
 ## cis-isoQTL
 - `isoqtl_analysis.ipynb`
+- `prep.ipynb`: sex and trimester specific QTL
 - `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx
 ## cis-sQTL
 - `sqtl_analysis.ipynb`

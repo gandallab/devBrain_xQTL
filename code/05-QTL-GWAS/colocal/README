@@ -1,0 +1,29 @@
+Extract cis association step in Snakefile is taking too long for iso/sQTL. Separately run.
+First generated lists (iso/sqtl_extract_cis_list.txt)
+
+In bash,
+for i in {1..288}; do wc -l locus_${i}/locus_intron.txt >> test; done
+In R,
+dat <- read.table("test")
+dat$trait <- "PGC3_SCZ_wave3_public.v2"
+dat$locus <- c(1:288)
+dat$V1 <- gsub("^", "1-", dat$V1)
+dat <- dat[,c(3,4,1)]
+write.table(dat, "../../code/sqtl_extract_cis_list.txt", col.names=F,row.names=F,quote=F,sep="\t")
+
+Then submit jobs with following. Celine and Ellen could not run this, had problem with qsub command.
+cat isoqtl_extract_cis_list.txt | while read trait locus array; do qsub -t $array ecaviar_isoqtl_extract_cis.sh $trait $locus
+
+Finally came to the easier solution, directly submit jobs if assoc file is missing.
+
+assoc=/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_40hcp_1e6/gtex.allpairs.txt.gz
+
+for locus in {36..40}; 
+    do count=$(<locus_${locus}/locus_intron.txt wc -l);  
+    for i in `eval echo {1..$count}`; 
+        do intron=`head -n $i locus_${locus}/locus_intron.txt | tail -n1`; 
+        if [ ! -f locus_${locus}/${intron}*txt ]; 
+            then qsub ~/project-gandalm/isoform_twas/colocal/code/scripts/extract_cis_assoc.sh $intron $assoc /u/project/gandalm/cindywen/isoform_twas/colocal/results_sqtl/PGC3_SCZ_wave3_public.v2/locus_${locus}/; 
+        fi; 
+    done; 
+done

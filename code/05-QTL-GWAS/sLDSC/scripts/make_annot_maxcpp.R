@@ -15,7 +15,7 @@ susie1 <- susie %>%
     group_by(variant_id) %>% 
     mutate(maxCPP = max(pip)) %>% 
     select(chr, pos, variant_id, maxCPP)
-susie1 <- susie1[!duplicated(susie1$variant_id),] # 122050, 4
+susie1 <- susie1[!duplicated(susie1$variant_id),]
 # reference variants not in susie CS have maxCPP as 0
 bim <- bim %>% left_join(susie1, by=c("V1"="chr", "V4"="pos"))
 bim$maxCPP[is.na(bim$maxCPP)] <- 0

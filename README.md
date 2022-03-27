@@ -1,12 +1,13 @@
 # Fetal brain mega QTL
+***Note: pipeline descriptions (i.e. Snakemake rules) are not up-to-date here. Please see the actual files.***
 ## Pipeline
 #### 1: Munging data
 #### 2: Genotype
 ##### Pre-imputation
-- Run plinkQC on data as a sanity check
+- Run `plinkQC` on data as a sanity check
 - First apply PLINK filters, then split by chromosome and sort
     - Walker data is already filtered; split by chromosome and impute
-    - For all the other datasets, we applied the same filters that the Walker data used `--hwe 1e6 --maf 0.01 --mind 0.10 --geno 0.05`
+    - For all the other datasets, we applied the same filters that the Walker data used `--hwe 1e-6 --maf 0.01 --mind 0.10 --geno 0.05`
     - Note: for HDBR, we used `--mind 0.3`; for LIBD, we fixed strand flips by running an extra step of [conform-gt](https://faculty.washington.edu/browning/conform-gt.html), which automatically splits the data by chromosome
 ##### Post-imputation
 - Scripts in `prelim/`: inputs are imputed genotype files downloaded from Michigan Imputation Server; concatenate by chromosomes, index, filter by R2, and take the ***intersection*** of high impute quality variants across datasets
@@ -61,16 +62,22 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 ```
 -   Sample swap check: 
     + [VerifyBamID](https://genome.sph.umich.edu/wiki/VerifyBamID) (slow. Use `--smID` to add subject ID to BAM sequence file)
-    + `check.ipynb`: called SNP from BAM, merged with imputed genotype
+    + `check.ipynb`: called SNP from BAM, merged with imputed genotype (Mike)
 #### 4: xQTL
 ##### cis-eQTL
 - `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
 - `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
-- `susie_analysis.ipynb`: susie finemapping results
-- `decon_analysis.ipynb`: cell type specific and interacting analysis
-- `cell_specific_analysis.ipynb`: (OUTDATED) cell type/group specific and interaction results
+- `susie.ipynb`: susie finemapping results
+- `decon.ipynb`: cell type specific and interacting analysis
+- `cell_specific.ipynb`: (OUTDATED) cell type/group specific and interaction results
 - `func_enrich.ipynb`: functional enrichment analysis of QTL
 - `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
+- `fetal_adult.ipynb`
+- `paintor.smk`
+- `pLI.ipynb`
+- `sex_specific.ipynb`
+-  `SV.ipynb`
+- `tri_specific.ipynb`
 - `Snakefile`
 ```
 prep
@@ -147,6 +154,7 @@ rules:
 ```
 ##### cis-isoQTL
 - `isoqtl_analysis.ipynb`
+- `prep.ipynb`: sex and trimester specific QTL
 - `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx did
 ##### cis-sQTL
 - `sqtl_analysis.ipynb`
@@ -320,8 +328,10 @@ Overall splicing
     - score_all_intron
     - h2med_all_intron
 ```
+##### Colocalization (eCAVIAR)
+- see snakefiles and ipynb
 ------
-## Data and results
+## Data and results (To be updated)
 #### Quantifications
 ##### Gene (`working/gene/`)
 - [x] Estimated counts (`"countsFromAbundance="lengthScaledTPM"`): `gene.noVersion.scaled.counts.tsv`

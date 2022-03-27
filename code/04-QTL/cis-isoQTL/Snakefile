@@ -919,7 +919,7 @@ rule make_susie_meta:
 
 rule make_susie_expr:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx.counts.processed.tsv",
+        "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx.counts.scaled.normalized.bed.gz",
         "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
     output:
         "/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/data/tx.counts.processed.susie.tsv",

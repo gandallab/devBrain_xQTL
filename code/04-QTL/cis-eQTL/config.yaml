@@ -6,3 +6,6 @@ DECON-QTL: "/u/project/gandalm/shared/apps/Decon-eQTL-v1.4-jar-with-dependencies
 
 # params
 SUSIE_N_BATCH: "500"
+
+# paintor
+PAINTOR_GENE: "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/paintor/eur_amr_afr_shared_egenes.txt"

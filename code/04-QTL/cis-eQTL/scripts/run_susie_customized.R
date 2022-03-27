@@ -32,14 +32,14 @@ option_list <- list(
   optparse::make_option(c("--qtl_group"), type="character", default=NULL,
                         help="Value of the current qtl_group.", metavar = "type"),
   optparse::make_option(c("--cisdistance"), type="integer", default=1000000, 
-                        help="Cis distance in bases from center of gene. [default \"%default\"]", metavar = "number"),
+                        help="Cis distance in bases from TSS of gene. [default \"%default\"]", metavar = "number"),
   optparse::make_option(c("--chunk"), type="character", default="1 1", 
                         help="Perform analysis in chunks. Eg value 5 10 would indicate that phenotypes are split into 10 chunks and the 5th one of those will be processed. [default \"%default\"]", metavar = "type"),
   # optparse::make_option(c("--eqtlutils"), type="character", default=NULL,
   #             help="Optional path to the eQTLUtils R package location. If not specified then eQTLUtils is assumed to be installed in the container. [default \"%default\"]", metavar = "type"),
   optparse::make_option(c("--permuted"), type="character", default="true",
                         help="If 'false', lead variants were extracted from nominal p-value files. [default \"%default\"]", metavar = "type"),
-  optparse::make_option(c("--quant_method"), type="character", default="gene_coutns",
+  optparse::make_option(c("--quant_method"), type="character", default="gene_counts",
                         help="gene_counts, leafcutter, txrevise, transcript_usage or exon_counts", metavar = "type")
   
 )
@@ -212,6 +212,7 @@ extractResults <- function(susie_object){
       overlapped = NA
     )
   added_variants = c()
+  # overlap checks if CS variants already exist in previous CS
   for (index in seq_along(credible_sets)){
     cs_variants = credible_sets[[index]]
     cs_id = susie_object$sets$cs_index[[index]]
@@ -315,11 +316,13 @@ genotype_file = opt$genotype_matrix
 # study_id = sample_metadata$study[1]
 
 #Make a SummarizedExperiment of the expression data
-se = eQTLUtils::makeSummarizedExperimentFromCountMatrix(assay = expression_matrix, 
+# https://github.com/kauralasoo/eQTLUtils/blob/1cc7a76b1e6d0e9289d791516c914cd251ee3db6/R/SummarizedExperiment_helpers.R
+# leafcutter makes no difference than gene_counts
+se = eQTLUtils::makeSummarizedExperimentFromCountMatrix( assay = expression_matrix, 
                                                          row_data = phenotype_meta, 
                                                          col_data = sample_metadata, 
                                                          quant_method = opt$quant_method,
-                                                         reformat = FALSE)
+                                                         reformat = FALSE )
 
 #If qtl_group is not specified, then use the first value in the qtl_group column of the sample metadata
 if(is.null(opt$qtl_group)){

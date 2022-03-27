@@ -1,6 +1,6 @@
 #!/bin/bash -l 
 #$ -cwd
-#$ -l h_data=4G,h_rt=4:00:00,highp
+#$ -l h_data=8G,h_rt=6:00:00,highp
 #$ -j y
 #$ -o /u/project/gandalm/cindywen/isoform_twas/eqtl_new/log/job.out.decon
 #$ -m a

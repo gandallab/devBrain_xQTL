@@ -11,7 +11,8 @@ args <- parse_args(p)
 
 dat <- fread(args$input, data.table = F)
 rel <- read.table(args$exclude_rel, header = F, stringsAsFactors = F)
+dat <- dat[,-c(1:3)]
 colnames(dat)[1] <- "phenotype_id"
 dat <- dat[,!colnames(dat) %in% rel$V1]
-write.table(dat, args$outname, col.names=T, row.names=F, quote=F, sep="\t")
+write.table(dat, args$outname, col.names = T, row.names = F, quote = F, sep = "\t")
 

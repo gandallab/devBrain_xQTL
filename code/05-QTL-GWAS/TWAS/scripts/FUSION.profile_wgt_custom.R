@@ -1,19 +1,20 @@
 #! /usr/bin/env Rscript
 
-arg = commandArgs(trailingOnly=T)
+arg <- commandArgs(trailingOnly = T)
 
-lst = read.table(arg[1],as.is=T)[,1]
-names = gsub(".wgt.RDat","",basename(lst))
-N = length(lst)
+lst <- read.table(arg[1], as.is = T)[, 1]
+names <- gsub(".wgt.RDat", "", basename(lst))
+N <- length(lst)
 
-models = c("top1","enet","susie")
-colnames = c( "id" , "nsnps" , "hsq" , "hsq.se" , "hsq.pv" , paste(models,"r2",sep='.') , paste(models,"pv",sep='.') )
+models <- c("top1", "enet", "susie")
+colnames <- c( "id" , "nsnps" , "hsq" , "hsq.se" , "hsq.pv" , 
+paste(models,"r2",sep='.') , paste(models,"pv",sep='.') )
 
-mat.snps = matrix(nrow=N,ncol=1)
-mat.hsq = matrix(nrow=N,ncol=2)
-mat.hsqpv = matrix(nrow=N,ncol=1)
-mat.mod.rsq = matrix(nrow=N,ncol=length(models))
-mat.mod.pv = matrix(nrow=N,ncol=length(models))
+mat.snps <- matrix(nrow=N, ncol=1)
+mat.hsq <- matrix(nrow=N, ncol=2)
+mat.hsqpv <- matrix(nrow=N, ncol=1)
+mat.mod.rsq <- matrix(nrow=N, ncol=length(models))
+mat.mod.pv <- matrix(nrow=N, ncol=length(models))
 
 for ( i in 1:N ) {
 #print(i)

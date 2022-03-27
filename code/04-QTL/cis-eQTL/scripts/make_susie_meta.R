@@ -26,10 +26,20 @@ colnames(dat2)[2] <- "phenotype_pos"
 dat2$strand <- rep(1, nrow(dat2))
 dat3 <- dat2[,c("phenotype_id","group_id","gene_id","chromosome","phenotype_pos","strand")]
 
+# This is not ideal
 if(grepl("mixed", args$qtl_group)) {
     write.table(sample_meta, paste0(dirname(args$bed),"/sample_meta.tsv"), col.names=T, row.names=F, quote=F, sep="\t")
     write.table(dat3, paste0(dirname(args$bed),"/phenotype_meta.tsv"), col.names=T, row.names=F, quote=F, sep="\t")
-} else {
+} else if (grepl("tri", args$qtl_group)){
+    trimester <- substring(args$qtl_group, 4, 4)
+    num_hcp <- substring(args$qtl_group, 14, 15)
+    write.table(sample_meta, paste0(dirname(args$bed),"/tri", trimester, "_sample_meta_", num_hcp, "hcp.tsv"), col.names=T, row.names=F, quote=F, sep="\t")
+    # write.table(dat3, paste0(dirname(args$bed),"/phenotype_meta_", num_hcp, "hcp.tsv"), col.names=T, row.names=F, quote=F, sep="\t")
+} else if (grepl("decon", args$qtl_group)) {
+    write.table(sample_meta, paste0(dirname(args$bed),"/sample_meta.tsv"), col.names=T, row.names=F, quote=F, sep="\t")
+    write.table(dat3, paste0(dirname(args$bed),"/phenotype_meta.tsv"), col.names=T, row.names=F, quote=F, sep="\t")
+}
+else { # ancestries
     num_hcp <- substring(args$qtl_group, 13, 14)
     write.table(sample_meta, paste0(dirname(args$bed),"/sample_meta_", num_hcp, "hcp.tsv"), col.names=T, row.names=F, quote=F, sep="\t")
     write.table(dat3, paste0(dirname(args$bed),"/phenotype_meta_", num_hcp, "hcp.tsv"), col.names=T, row.names=F, quote=F, sep="\t")

@@ -9,7 +9,7 @@ indir <- "/u/project/gandalm/shared/GenomicDatasets/FetalBrain/Werling2020_eQTL/
 qcdir <- "/u/home/c/cindywen/project-gandalm/isoform_twas/plinkQC/werling"
 name <- "PEC_HSB_Yale-UCSF_WGS"
 #name <- "libd.phase2only.1M.fixed.final"
-path2plink <- "/u/home/c/cindywen/project-gandalm/isoform_twas/plinkQC/plink"
+path2plink <- "/u/project/gandalm/shared/apps/plink"
 
 # now skipping individual level QC
 
