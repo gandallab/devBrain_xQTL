@@ -21,10 +21,16 @@ eQTL maxCPP
     - partition_h2_eqtl_maxCPP
     - partition_h2_gtex_brain_cortext_maxCPP
 isoQTL_maxCPP
+sQTL_maxCPP
+CT specific maxCPP
+jointly e, iso, sQTL maxCPP
+trimester specific maxCPP
 ```
 ## TWAS-FUSION
 - `TWAS.ipynb`
-- `Snakefile`: tested running with and without rank normalization of gene expression
+- `LDREF.ipynb`
+- `run_focus.sh`
+- `Snakefile`
 ```
 rules:
 - make_plink
@@ -64,6 +70,19 @@ Overall splicing
     - expr_rel_intron
     - score_all_intron
     - h2med_all_intron
+Trimester expression genes
+    - score_all_gene_tri(test): used (1) trimester specific covaraites and (2/test) EUR corrected file separated into trimesters
+    - h2_med_all_gene_tri(test)
+Sex specific
 ```
 ## Colocalization (eCAVIAR)
-- see snakefiles and ipynb
+- `eCAVIAR.ipynb`
+- `GRIN2A.ipynb`
+- `locuszoom.ipynb`
+- `sqtlviztools.ipynb`
+- `Visualizing_Loci_working.ipynb`
+- `celltype.smk`
+- `eqtl.smk`
+- `isoqtl.smk`
+- `sex_tri.smk`
+- `sqtl.smk`

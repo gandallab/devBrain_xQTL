@@ -1,3 +1,0 @@
-IndentationError in line 22 of <tokenize>:
-unindent does not match any outer indentation level (<tokenize>, line 22)
-  File "/u/local/apps/anaconda3/2019.03/envs/snakemake/lib/python3.8/tokenize.py", line 512, in _tokenize

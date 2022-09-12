@@ -17,6 +17,6 @@ mkdir ./to_impute/
 bcftools view -S ^${list} PEC_HSB_Yale-UCSF_WGS.vcf.gz > ./to_impute/werling_sampleFiltered.vcf
 plink --vcf ./to_impute/werling_sampleFiltered.vcf --allow-extra-chr --make-bed --out ./to_impute/werling_sampleFiltered
 plink --bfile ./to_impute/werling_sampleFiltered --maf 0.01 --geno 0.05 --mind 0.1 --hwe 1e-6 --allow-extra-chr --make-bed --out ./to_impute/werling_filtered
-plink --bfile werling_filtered --recode vcf-iid --allow-extra-chr --out werling_filtered
+plink --bfile to_impute/werling_filtered --recode vcf-iid --allow-extra-chr --out to_impute/werling_filtered
 bgzip ./to_impute/werling_filtered.vcf
 tabix -p vcf ./to_impute/werling_filtered.vcf.gz

@@ -1079,6 +1079,7 @@ rule get_maf:
         """
 
 
+# CAUTION: this has flipped alleles
 rule make_plink:
     input:
         config["GENO_DIR"] + "ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz",

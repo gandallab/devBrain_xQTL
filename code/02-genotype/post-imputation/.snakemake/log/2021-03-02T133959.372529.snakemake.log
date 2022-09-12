@@ -1,2 +1,0 @@
-SyntaxError in line 711 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
-Command must be given as string after the shell keyword. (Snakefile, line 711)

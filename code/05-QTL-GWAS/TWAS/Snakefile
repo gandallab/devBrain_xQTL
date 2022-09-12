@@ -9,6 +9,7 @@ configfile: "config.yaml"
 
 """
 rules:
+Multi-ethnic and trimesters
 - make_plink
 - compute_weights (rn)
 - concat_hsq (rn)
@@ -30,6 +31,9 @@ PERM = [1000]  # permutations actually do not affect assoc; no need to do 0 perm
 
 
 # ruleorder: post_process_rn > chr_sig_rn > concat_extract_rn > concat_extract > assoc_rn > assoc > summary_wgt_rn > summary_wgt > write_wgtlist_rn > write_wgtlist > concat_hsq_rn > compute_weights_rn > concat_hsq > compute_weights
+
+
+ruleorder: write_wgtlist_tri_ldref > concat_hsq_tri_ldref > compute_weights_rn_tri_ldref
 
 
 rule all:
@@ -113,16 +117,33 @@ rule all:
             suffix=["bed", "bim", "fam", "log"],
             chr_num=np.arange(1, 23, 1),
         ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
+        #     perm=PERM,
+        #     GWAS_trait=list(GWAS_DIC.keys()),
+        # ),
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri1_LDREF_rn/models_sum.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri2_LDREF_rn/models_sum.txt",
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri1_LDREF_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
             perm=PERM,
             GWAS_trait=list(GWAS_DIC.keys()),
         ),
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_tri1_{start}_{end}_rn.done",
-            zip,
-            start=np.arange(1, 31502, 100),
-            end=np.arange(1, 31502, 100) + 99,
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri2_LDREF_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
+            perm=PERM,
+            GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/models_sum.txt",
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
+            perm=PERM,
+            GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/chr{chr_num}.sig.analysis.done",
+            GWAS_trait=list(GWAS_DIC.keys()),
+            chr_num=np.setdiff1d(np.arange(1, 23, 1),np.array([21])),
         ),
 
 
@@ -667,50 +688,50 @@ rule all:
 #         """
 
 
-rule chr_sig_rn:
-    input:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{chr_num}.dat",
-    output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.chr{chr_num}.sig",
-    resources:
-        mem_gb=4,
-        time_min=60,
-    shell:
-        """
-        if [ "{wildcards.perm}" == "0" ]; then
-            cat {input[0]} | awk 'NR == 1 || $(NF-5) < 0.05/{wildcards.N_test}' > {output[0]}
-        elif [ "{wildcards.perm}" == "1000" ]; then
-            cat {input[0]} | awk 'NR == 1 || $(NF-8) < 0.05/{wildcards.N_test}' > {output[0]}
-        fi
-        """
+# rule chr_sig_rn:
+#     input:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{chr_num}.dat",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.chr{chr_num}.sig",
+#     resources:
+#         mem_gb=4,
+#         time_min=60,
+#     shell:
+#         """
+#         if [ "{wildcards.perm}" == "0" ]; then
+#             cat {input[0]} | awk 'NR == 1 || $(NF-5) < 0.05/{wildcards.N_test}' > {output[0]}
+#         elif [ "{wildcards.perm}" == "1000" ]; then
+#             cat {input[0]} | awk 'NR == 1 || $(NF-8) < 0.05/{wildcards.N_test}' > {output[0]}
+#         fi
+#         """
 
 
-rule post_process_rn:
-    input:
-        sig="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.chr{chr_num}.sig",
-    output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.{chr_num}.sig.analysis.joint_included.dat",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.{chr_num}.sig.analysis.joint_dropped.dat",
-    resources:
-        mem_gb=4,
-        time_min=60,
-    params:
-        gwas_sum_stats=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
-        out_prefix="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.{chr_num}.sig.analysis",
-        data_ld_prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.",
-    shell:
-        """
-        . /u/local/Modules/default/init/modules.sh
-        module load R/3.6.0
-        Rscript {config[FUSION_POST_SCRIPT]} \
-            --sumstats {params.gwas_sum_stats}.sumstats.gz \
-            --input {input.sig} \
-            --out {params.out_prefix} \
-            --ref_ld_chr {params.data_ld_prefix} \
-            --chr {wildcards.chr_num} \
-            --plot \
-            --locus_win 100000
-        """
+# rule post_process_rn:
+#     input:
+#         sig="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.chr{chr_num}.sig",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.{chr_num}.sig.analysis.joint_included.dat",
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.{chr_num}.sig.analysis.joint_dropped.dat",
+#     resources:
+#         mem_gb=4,
+#         time_min=60,
+#     params:
+#         gwas_sum_stats=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+#         out_prefix="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_{ancestry}_rn/assoc/{GWAS_trait}.{perm}perm.{N_test}test.{chr_num}.sig.analysis",
+#         data_ld_prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/{ancestry}/filtered.hg19.sorted.removeGeneOutlier.",
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/3.6.0
+#         Rscript {config[FUSION_POST_SCRIPT]} \
+#             --sumstats {params.gwas_sum_stats}.sumstats.gz \
+#             --input {input.sig} \
+#             --out {params.out_prefix} \
+#             --ref_ld_chr {params.data_ld_prefix} \
+#             --chr {wildcards.chr_num} \
+#             --plot \
+#             --locus_win 100000
+#         """
 
 
 ############ ALL ############
@@ -738,22 +759,365 @@ rule make_plink_all:
         """
 
 
-rule compute_weights_rn_all:
+# rule compute_weights_rn_all:
+#     input:
+#         GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/all_gene_exp_regressed.txt",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_all_{start}_{end}_rn.done",
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/{start}_{end}.hsq",
+#         directory(
+#             "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/{start}_{end}"
+#         ),
+#     resources:
+#         mem_gb=4,
+#         time_min=720,
+#         num_cores=8,
+#     params:
+#         WORK_DIR="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/",
+#         GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier",
+#         OUT_DIR="WEIGHTS",
+#         BATCH_START="{start}",
+#         BATCH_END="{end}",
+#         LOG_DIR="/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/",
+#     shell:
+#         """
+#         set +o pipefail;
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/4.1.0-BIO
+#         module load plink/1.90b624
+
+#         # mkdir -p {params.LOG_DIR}
+#         mkdir -p {params.WORK_DIR}
+#         cd {params.WORK_DIR}
+
+#         NR="{params.BATCH_START}_{params.BATCH_END}"
+#         mkdir -p tmp/$NR
+#         mkdir -p hsq/$NR
+#         mkdir -p out/$NR
+#         mkdir -p {params.OUT_DIR}
+
+#         # Loop through each gene expression phenotype in the batch; 1st row is header
+#         START_LINE={params.BATCH_START}
+#         if (($START_LINE == 1)); then START_LINE=2; fi
+#         cat {input.GENE_EXPR} | awk -vs=$START_LINE -ve={params.BATCH_END} 'NR >= s && NR <= e' |  while read PARAM; do
+
+#         # Get the gene positions +/- 1Mb
+#         CHR=`echo $PARAM | awk '{{ print $3 }}'`
+#         P0=`echo $PARAM | awk '{{ print $4 - 1e6 }}'`
+#         P1=`echo $PARAM | awk '{{ print $4 + 1e6 }}'`
+#         GNAME=`echo $PARAM | awk '{{ print $1 }}'`
+
+#         OUT="tmp/$NR/$GNAME"
+
+#         echo $GNAME $CHR $P0 $P1
+
+#         # Pull out the current gene expression phenotype
+#         echo $PARAM | tr ' ' '\n' | tail -n+5 | paste {input.GENE_EXPR}.ID - > $OUT.pheno
+
+#         # Get the locus genotypes for all samples and set current gene expression as the phenotype
+#         # Note: not using plink2, --force-intersect not ending; plink/1.9 does not take negtive number --from/to-bp
+#         if (($P0 < 0)); then P0=0; fi
+#         plink --bfile {params.GENO_PREFIX}.$CHR \
+#             --pheno $OUT.pheno \
+#             --make-bed \
+#             --out $OUT \
+#             --keep $OUT.pheno \
+#             --chr $CHR \
+#             --from-bp $P0 \
+#             --to-bp $P1 \
+#             --allow-no-sex 
+
+#         FINAL_OUT="{params.OUT_DIR}/$GNAME"
+
+#         Rscript {config[FUSION_SUSIE_SCRIPT]} \
+#             --bfile $OUT \
+#             --tmp $OUT.tmp \
+#             --out $FINAL_OUT \
+#             --verbose 0 \
+#             --save_hsq \
+#             --PATH_gcta {config[GCTA]} \
+#             --models top1,enet,susie \
+#             --PATH_plink {config[PLINK]} \
+#             --plink_threads {resources.num_cores} \
+#             --rn
+
+#         # Append heritability output to hsq file
+#         # Not using lambda for resources or restarting multiple times due to this!
+#         # update: this is fine as hsq file is specified as output file, so won't have duplicated lines. Just check wc -l there are 100 lines in each hsq file
+#         cat $FINAL_OUT.hsq >> hsq/$NR.hsq
+
+#         # Clean-up just in case
+#         rm -f $FINAL_OUT.hsq $OUT.tmp.*
+
+#         # Remove all intermediate files
+#         rm $OUT.*
+
+#         # GO TO THE NEXT GENE
+#         done
+
+#         touch {output[0]}
+#         """
+
+
+# rule concat_hsq_all:
+#     input:
+#         expand(
+#             "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_all_{start}_{end}_rn.done",
+#             zip,
+#             start=np.arange(1, 31502, 100),
+#             end=np.arange(1, 31502, 100) + 99,
+#         ),
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/concat_hsq.txt",
+#     resources:
+#         mem_gb=4,
+#         time_min=60,
+#     shell:
+#         """
+#         cd /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/
+#         cat *.hsq >> concat_hsq.txt 
+#         """
+
+
+# rule write_wgtlist_all:
+#     input:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/concat_hsq.txt",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WGTLIST.txt",
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/sigificant_positive_h2.txt",
+#     resources:
+#         mem_gb=4,
+#         time_min=60,
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/4.1.0-BIO
+#         Rscript scripts/write_wgtlist.R \
+#             /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/
+#         """
+
+
+# rule summary_wgt_rn:
+#     input:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WGTLIST.txt",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/models_sum.txt",
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/models_log",
+#     resources:
+#         mem_gb=4,
+#         time_min=120,
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/4.1.0-BIO
+#         Rscript scripts/FUSION.profile_wgt_custom.R \
+#             {input[0]} \
+#             {output[0]} \
+#             {output[1]}
+#         """
+
+
+# rule make_pos_file_all:
+#     input:
+#         weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WGTLIST.txt",
+#         bed="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/all_gene_exp_regressed.txt",
+#         sig_gene="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/sigificant_positive_h2.txt",
+#         gtf_gene="/u/project/gandalm/cindywen/isoform_twas/salmon/gencode.v33lift37.annotation.gene.info.tsv",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/gene_all.pos",
+#     resources:
+#         mem_gb=4,
+#         time_min=60,
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/4.1.0-BIO
+#         Rscript scripts/make_pos_file.R \
+#             {input.weights} \
+#             {input.bed} \
+#             {input.sig_gene} \
+#             {input.gtf_gene} \
+#             {output[0]} \
+#             all
+#         """
+
+
+# rule assoc_all:
+#     input:
+#         weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/gene_all.pos",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm.{chr_num}.dat",
+#     resources:
+#         mem_gb=4,
+#         time_min=600,
+#         num_cores=4,
+#     params:
+#         gwas_sum_stats=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+#         assoc_dir="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}",
+#         data_ld_prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.",
+#         weights_dir=(
+#             "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WEIGHTS"
+#         ),
+#         gwas_n=lambda wildcards: GWAS_N_DIC[wildcards.GWAS_trait],
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/4.1.0-BIO
+#         mkdir -p {params.assoc_dir}
+#         Rscript {config[FUSION_ASSOC_SCRIPT]} \
+#             --sumstats {params.gwas_sum_stats}.sumstats.gz \
+#             --weights {input.weights} \
+#             --weights_dir {params.weights_dir} \
+#             --ref_ld_chr {params.data_ld_prefix} \
+#             --chr {wildcards.chr_num} \
+#             --out {output[0]} \
+#             --perm {wildcards.perm} \
+#             --coloc_P 0.05 \
+#             --PANELN panel.txt \
+#             --GWASN {params.gwas_n}
+#         """
+
+
+# previously for EUR analysis, extracted sig here; now in ipynb, first filter out NAs then run multiple testing correction
+# rule concat_extract_all:
+#     input:
+#         expand(
+#             "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{{GWAS_trait}}/{{perm}}perm.{chr_num}.dat",
+#             chr_num=np.arange(1, 23),
+#         ),
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
+#     resources:
+#         meme_gb=4,
+#         time_min=60,
+#     params:
+#         prefix="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm",
+#     shell:
+#         """
+#         head -1 {params.prefix}.1.dat > {output[0]}
+#         tail -n +2 -q {params.prefix}.*.dat >> {output[0]}
+#         """
+
+
+#### trimester ####
+# rule compute_weights_rn_tri:
+#     input:
+#         GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/tri{tri}_gene_exp_regressed.txt",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_tri{tri}_{start}_{end}_rn.done",
+#         "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_rn/hsq/{start}_{end}.hsq",
+#         directory(
+#             "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_rn/hsq/{start}_{end}"
+#         ),
+#     resources:
+#         mem_gb=4,
+#         time_min=720,
+#         num_cores=8,
+#     params:
+#         WORK_DIR=(
+#             "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_rn/"
+#         ),
+#         GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier",
+#         OUT_DIR="WEIGHTS",
+#         BATCH_START="{start}",
+#         BATCH_END="{end}",
+#         LOG_DIR="/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/",
+#     shell:
+#         """
+#         set +o pipefail;
+#         . /u/local/Modules/default/init/modules.sh
+#         module load R/4.1.0-BIO
+#         module load plink/1.90b624
+
+#         # mkdir -p {params.LOG_DIR}
+#         mkdir -p {params.WORK_DIR}
+#         cd {params.WORK_DIR}
+
+#         NR="{params.BATCH_START}_{params.BATCH_END}"
+#         mkdir -p tmp/$NR
+#         mkdir -p hsq/$NR
+#         # mkdir -p out/$NR
+#         mkdir -p {params.OUT_DIR}
+
+#         # Loop through each gene expression phenotype in the batch; 1st row is header
+#         START_LINE={params.BATCH_START}
+#         if (($START_LINE == 1)); then START_LINE=2; fi
+#         cat {input.GENE_EXPR} | awk -vs=$START_LINE -ve={params.BATCH_END} 'NR >= s && NR <= e' |  while read PARAM; do
+
+#         # Get the gene positions +/- 1Mb
+#         CHR=`echo $PARAM | awk '{{ print $3 }}'`
+#         P0=`echo $PARAM | awk '{{ print $4 - 1e6 }}'`
+#         P1=`echo $PARAM | awk '{{ print $4 + 1e6 }}'`
+#         GNAME=`echo $PARAM | awk '{{ print $1 }}'`
+
+#         OUT="tmp/$NR/$GNAME"
+
+#         echo $GNAME $CHR $P0 $P1
+
+#         # Pull out the current gene expression phenotype
+#         echo $PARAM | tr ' ' '\n' | tail -n+5 | paste {input.GENE_EXPR}.ID - > $OUT.pheno
+
+#         # Get the locus genotypes for all samples and set current gene expression as the phenotype
+#         # Note: not using plink2, --force-intersect not ending; plink/1.9 does not take negtive number --from/to-bp
+#         if (($P0 < 0)); then P0=0; fi
+#         plink --bfile {params.GENO_PREFIX}.$CHR \
+#             --pheno $OUT.pheno \
+#             --make-bed \
+#             --out $OUT \
+#             --keep $OUT.pheno \
+#             --chr $CHR \
+#             --from-bp $P0 \
+#             --to-bp $P1 \
+#             --allow-no-sex 
+
+#         FINAL_OUT="{params.OUT_DIR}/$GNAME"
+
+#         Rscript {config[FUSION_SUSIE_SCRIPT]} \
+#             --bfile $OUT \
+#             --tmp $OUT.tmp \
+#             --out $FINAL_OUT \
+#             --verbose 0 \
+#             --save_hsq \
+#             --PATH_gcta {config[GCTA]} \
+#             --models top1,enet,susie \
+#             --PATH_plink {config[PLINK]} \
+#             --plink_threads {resources.num_cores} \
+#             --rn
+
+#         # Append heritability output to hsq file
+#         # Not using lambda for resources or restarting multiple times due to this!
+#         # update: this is fine as hsq file is specified as output file, so won't have duplicated lines. Just check wc -l there are 100 lines in each hsq file
+#         cat $FINAL_OUT.hsq >> hsq/$NR.hsq
+
+#         # Clean-up just in case
+#         rm -f $FINAL_OUT.hsq $OUT.tmp.*
+
+#         # Remove all intermediate files
+#         rm $OUT.*
+
+#         # GO TO THE NEXT GENE
+#         done
+
+#         touch {output[0]}
+#         """
+
+
+rule compute_weights_rn_tri_ldref:
     input:
-        GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/all_gene_exp_regressed.txt",
+        GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/tri{tri}_gene_exp_regressed.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_all_{start}_{end}_rn.done",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/{start}_{end}.hsq",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_tri{tri}_LDREF_{start}_{end}_rn.done",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/hsq/{start}_{end}.hsq",
         directory(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/{start}_{end}"
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/hsq/{start}_{end}"
         ),
     resources:
         mem_gb=4,
         time_min=720,
-        num_cores=8,
+        num_cores=4,
     params:
-        WORK_DIR="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/",
-        GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier",
+        WORK_DIR="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/",
+        GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier",
         OUT_DIR="WEIGHTS",
         BATCH_START="{start}",
         BATCH_END="{end}",
@@ -772,7 +1136,7 @@ rule compute_weights_rn_all:
         NR="{params.BATCH_START}_{params.BATCH_END}"
         mkdir -p tmp/$NR
         mkdir -p hsq/$NR
-        mkdir -p out/$NR
+        # mkdir -p out/$NR
         mkdir -p {params.OUT_DIR}
 
         # Loop through each gene expression phenotype in the batch; 1st row is header
@@ -793,6 +1157,20 @@ rule compute_weights_rn_all:
         # Pull out the current gene expression phenotype
         echo $PARAM | tr ' ' '\n' | tail -n+5 | paste {input.GENE_EXPR}.ID - > $OUT.pheno
 
+
+        if (($P0 < 0)); then P0=0; fi
+        plink --bfile {params.GENO_PREFIX}.$CHR \
+            --pheno $OUT.pheno \
+            --make-bed \
+            --out $OUT \
+            --keep $OUT.pheno \
+            --chr $CHR \
+            --from-bp $P0 \
+            --to-bp $P1 \
+            --allow-no-sex 
+
+        if [[ $(join -j 2 <(sort -k2,2 $OUT.bim) <(sort -k2,2 {config[LDREF]}/1000G.EUR.$CHR.bim) | wc -l) = [01] ]]; then echo "$GNAME NA NA NA" >> hsq/$NR.hsq; else
+
         # Get the locus genotypes for all samples and set current gene expression as the phenotype
         # Note: not using plink2, --force-intersect not ending; plink/1.9 does not take negtive number --from/to-bp
         if (($P0 < 0)); then P0=0; fi
@@ -804,7 +1182,8 @@ rule compute_weights_rn_all:
             --chr $CHR \
             --from-bp $P0 \
             --to-bp $P1 \
-            --allow-no-sex 
+            --allow-no-sex \
+            --extract {config[LDREF]}/1000G.EUR.$CHR.bim
 
         FINAL_OUT="{params.OUT_DIR}/$GNAME"
 
@@ -831,6 +1210,8 @@ rule compute_weights_rn_all:
         # Remove all intermediate files
         rm $OUT.*
 
+        fi
+
         # GO TO THE NEXT GENE
         done
 
@@ -838,32 +1219,32 @@ rule compute_weights_rn_all:
         """
 
 
-rule concat_hsq_all:
+rule concat_hsq_tri_ldref:
     input:
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_all_{start}_{end}_rn.done",
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_tri{{tri}}_LDREF_{start}_{end}_rn.done",
             zip,
             start=np.arange(1, 31502, 100),
             end=np.arange(1, 31502, 100) + 99,
         ),
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/concat_hsq.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/hsq/concat_hsq.txt",
     resources:
         mem_gb=4,
         time_min=60,
     shell:
         """
-        cd /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/
+        cd /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{wildcards.tri}_LDREF_rn/hsq/
         cat *.hsq >> concat_hsq.txt 
         """
 
 
-rule write_wgtlist_all:
+rule write_wgtlist_tri_ldref:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/concat_hsq.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/hsq/concat_hsq.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WGTLIST.txt",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/sigificant_positive_h2.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/WGTLIST.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/hsq/sigificant_positive_h2.txt",
     resources:
         mem_gb=4,
         time_min=60,
@@ -872,16 +1253,16 @@ rule write_wgtlist_all:
         . /u/local/Modules/default/init/modules.sh
         module load R/4.1.0-BIO
         Rscript scripts/write_wgtlist.R \
-            /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/
+            /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{wildcards.tri}_LDREF_rn/hsq/
         """
 
 
-rule summary_wgt_rn:
+rule summary_wgt_tri_ldref:
     input:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WGTLIST.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/WGTLIST.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/models_sum.txt",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/models_log",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/models_sum.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/models_log",
     resources:
         mem_gb=4,
         time_min=120,
@@ -896,14 +1277,14 @@ rule summary_wgt_rn:
         """
 
 
-rule make_pos_file_all:
+rule make_pos_file_tri_ldref:
     input:
-        weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WGTLIST.txt",
-        bed="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/all_gene_exp_regressed.txt",
-        sig_gene="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/hsq/sigificant_positive_h2.txt",
+        weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/WGTLIST.txt",
+        bed="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/tri{tri}_gene_exp_regressed.txt",
+        sig_gene="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/hsq/sigificant_positive_h2.txt",
         gtf_gene="/u/project/gandalm/cindywen/isoform_twas/salmon/gencode.v33lift37.annotation.gene.info.tsv",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/gene_all.pos",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/gene_all.pos",
     resources:
         mem_gb=4,
         time_min=60,
@@ -917,27 +1298,24 @@ rule make_pos_file_all:
             {input.sig_gene} \
             {input.gtf_gene} \
             {output[0]} \
-            all
+            tri{wildcards.tri}
         """
 
 
-rule assoc_all:
+rule assoc_tri_ldref:
     input:
-        weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/gene_all.pos",
-        panel="panel.txt",
+        weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/gene_all.pos",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm.{chr_num}.dat",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/assoc/{GWAS_trait}/{perm}perm.{chr_num}.dat",
     resources:
         mem_gb=4,
         time_min=600,
         num_cores=4,
     params:
         gwas_sum_stats=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
-        assoc_dir="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}",
-        data_ld_prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.",
-        weights_dir=(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/WEIGHTS"
-        ),
+        assoc_dir="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/assoc/{GWAS_trait}",
+        data_ld_prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.",
+        weights_dir="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/WEIGHTS",
         gwas_n=lambda wildcards: GWAS_N_DIC[wildcards.GWAS_trait],
     shell:
         """
@@ -953,25 +1331,24 @@ rule assoc_all:
             --out {output[0]} \
             --perm {wildcards.perm} \
             --coloc_P 0.05 \
-            --PANELN {input.panel} \
+            --PANELN panel.txt \
             --GWASN {params.gwas_n}
         """
 
 
-# previously for EUR analysis, extracted sig here; now in ipynb, first filter out NAs then run multiple testing correction
-rule concat_extract_all:
+rule concat_extract_tri_ldref:
     input:
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{{GWAS_trait}}/{{perm}}perm.{chr_num}.dat",
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{{tri}}_LDREF_rn/assoc/{{GWAS_trait}}/{{perm}}perm.{chr_num}.dat",
             chr_num=np.arange(1, 23),
         ),
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
     resources:
         meme_gb=4,
         time_min=60,
     params:
-        prefix="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_rn/assoc/{GWAS_trait}/{perm}perm",
+        prefix="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_LDREF_rn/assoc/{GWAS_trait}/{perm}perm",
     shell:
         """
         head -1 {params.prefix}.1.dat > {output[0]}
@@ -979,14 +1356,17 @@ rule concat_extract_all:
         """
 
 
-rule compute_weights_rn_tri:
+#### LDREF ####
+# error if none or one variant left after --extract
+# see code below, these genes have GNAME NA in hsq file, while others have WEIGHTS/GNAME ...
+rule compute_weights_rn_all_ldref:
     input:
-        GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/tri{tri}_gene_exp_regressed.txt",
+        GENE_EXPR="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/all_gene_exp_regressed.txt",
     output:
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_tri{tri}_{start}_{end}_rn.done",
-        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_rn/hsq/{start}_{end}.hsq",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_LDREF_all_{start}_{end}_rn.done",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/{start}_{end}.hsq",
         directory(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_rn/hsq/{start}_{end}"
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/{start}_{end}"
         ),
     resources:
         mem_gb=4,
@@ -994,9 +1374,9 @@ rule compute_weights_rn_tri:
         num_cores=8,
     params:
         WORK_DIR=(
-            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_tri{tri}_rn/"
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/"
         ),
-        GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier",
+        GENO_PREFIX="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier",
         OUT_DIR="WEIGHTS",
         BATCH_START="{start}",
         BATCH_END="{end}",
@@ -1015,7 +1395,7 @@ rule compute_weights_rn_tri:
         NR="{params.BATCH_START}_{params.BATCH_END}"
         mkdir -p tmp/$NR
         mkdir -p hsq/$NR
-        mkdir -p out/$NR
+        # mkdir -p out/$NR
         mkdir -p {params.OUT_DIR}
 
         # Loop through each gene expression phenotype in the batch; 1st row is header
@@ -1036,8 +1416,9 @@ rule compute_weights_rn_tri:
         # Pull out the current gene expression phenotype
         echo $PARAM | tr ' ' '\n' | tail -n+5 | paste {input.GENE_EXPR}.ID - > $OUT.pheno
 
-        # Get the locus genotypes for all samples and set current gene expression as the phenotype
-        # Note: not using plink2, --force-intersect not ending; plink/1.9 does not take negtive number --from/to-bp
+        # Exclude genes with none or one variants left after --extract, had error with these
+
+
         if (($P0 < 0)); then P0=0; fi
         plink --bfile {params.GENO_PREFIX}.$CHR \
             --pheno $OUT.pheno \
@@ -1048,6 +1429,22 @@ rule compute_weights_rn_tri:
             --from-bp $P0 \
             --to-bp $P1 \
             --allow-no-sex 
+
+        if [[ $(join -j 2 <(sort -k2,2 $OUT.bim) <(sort -k2,2 {config[LDREF]}/1000G.EUR.$CHR.bim) | wc -l) = [01] ]]; then echo "$GNAME NA NA NA" >> hsq/$NR.hsq; else
+
+        # Get the locus genotypes for all samples and set current gene expression as the phenotype
+        # Note: not using plink2, --force-intersect not ending; plink/1.9 does not take negtive number --from/to-bp
+        # if (($P0 < 0)); then P0=0; fi
+        plink --bfile {params.GENO_PREFIX}.$CHR \
+            --pheno $OUT.pheno \
+            --make-bed \
+            --out $OUT \
+            --keep $OUT.pheno \
+            --chr $CHR \
+            --from-bp $P0 \
+            --to-bp $P1 \
+            --allow-no-sex \
+            --extract {config[LDREF]}/1000G.EUR.$CHR.bim
 
         FINAL_OUT="{params.OUT_DIR}/$GNAME"
 
@@ -1069,13 +1466,183 @@ rule compute_weights_rn_tri:
         cat $FINAL_OUT.hsq >> hsq/$NR.hsq
 
         # Clean-up just in case
-        # rm -f $FINAL_OUT.hsq $OUT.tmp.*
+        rm -f $FINAL_OUT.hsq $OUT.tmp.*
 
         # Remove all intermediate files
-        # rm $OUT.*
+        rm $OUT.*
+
+        fi
 
         # GO TO THE NEXT GENE
         done
 
         touch {output[0]}
+        """
+
+
+rule concat_hsq_all_ldref:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/log/weights_log/compute_weights_gene_LDREF_all_{start}_{end}_rn.done",
+            zip,
+            start=np.arange(1, 31502, 100),
+            end=np.arange(1, 31502, 100) + 99,
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/concat_hsq.txt",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    shell:
+        """
+        cd /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/
+        cat *.hsq >> concat_hsq.txt 
+        """
+
+
+rule write_wgtlist_all_ldref:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/concat_hsq.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/WGTLIST.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/sigificant_positive_h2.txt",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/write_wgtlist.R \
+            /u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/
+        """
+
+
+rule summary_wgt_rn_ldref:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/WGTLIST.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/models_sum.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/models_log",
+    resources:
+        mem_gb=4,
+        time_min=120,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/FUSION.profile_wgt_custom.R \
+            {input[0]} \
+            {output[0]} \
+            {output[1]}
+        """
+
+
+rule make_pos_file_all_ldref:
+    input:
+        weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/WGTLIST.txt",
+        bed="/u/project/gandalm/cindywen/isoform_twas/TWAS/data/all_gene_exp_regressed.txt",
+        sig_gene="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/hsq/sigificant_positive_h2.txt",
+        gtf_gene="/u/project/gandalm/cindywen/isoform_twas/salmon/gencode.v33lift37.annotation.gene.info.tsv",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/gene_all.pos",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/make_pos_file.R \
+            {input.weights} \
+            {input.bed} \
+            {input.sig_gene} \
+            {input.gtf_gene} \
+            {output[0]} \
+            all
+        """
+
+
+rule assoc_all_ldref:
+    input:
+        weights="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/gene_all.pos",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/{perm}perm.{chr_num}.dat",
+    resources:
+        mem_gb=4,
+        time_min=600,
+        num_cores=4,
+    params:
+        gwas_sum_stats=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+        assoc_dir="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}",
+        data_ld_prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.",
+        weights_dir="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/WEIGHTS",
+        gwas_n=lambda wildcards: GWAS_N_DIC[wildcards.GWAS_trait],
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        mkdir -p {params.assoc_dir}
+        Rscript {config[FUSION_ASSOC_SCRIPT]} \
+            --sumstats {params.gwas_sum_stats}.sumstats.gz \
+            --weights {input.weights} \
+            --weights_dir {params.weights_dir} \
+            --ref_ld_chr {params.data_ld_prefix} \
+            --chr {wildcards.chr_num} \
+            --out {output[0]} \
+            --perm {wildcards.perm} \
+            --coloc_P 0.05 \
+            --PANELN panel.txt \
+            --GWASN {params.gwas_n}
+        """
+
+
+rule concat_extract_all_ldref:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{{GWAS_trait}}/{{perm}}perm.{chr_num}.dat",
+            chr_num=np.arange(1, 23),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/{perm}perm.all.chr",
+    resources:
+        meme_gb=4,
+        time_min=60,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/{perm}perm",
+    shell:
+        """
+        head -1 {params.prefix}.1.dat > {output[0]}
+        tail -n +2 -q {params.prefix}.*.dat >> {output[0]}
+        """
+
+# Needs CHR column; will filter for chr
+rule post_process:
+    input:
+        sig="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/1000perm.all.sig.post_assoc.txt",
+    output:
+        # "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/chr{chr_num}.sig.analysis.joint_included.dat",
+        # "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/chr{chr_num}.sig.analysis.joint_dropped.dat",
+        "/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/chr{chr_num}.sig.analysis.done",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        gwas_sum_stats=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+        out_prefix="/u/project/gandalm/cindywen/isoform_twas/TWAS/results/gene_all_LDREF_rn/assoc/{GWAS_trait}/chr{chr_num}.sig.analysis",
+        data_ld_prefix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript {config[FUSION_POST_SCRIPT]} \
+            --sumstats {params.gwas_sum_stats}.sumstats.gz \
+            --input {input.sig} \
+            --out {params.out_prefix} \
+            --ref_ld_chr {params.data_ld_prefix} \
+            --chr {wildcards.chr_num} \
+            --plot \
+            --report \
+            --locus_win 100000
+        touch {params.out_prefix}.done
         """

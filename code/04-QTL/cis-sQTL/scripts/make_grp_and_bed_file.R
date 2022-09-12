@@ -30,6 +30,7 @@ bed_info <- bed[,1:7] %>% # 273167      7
     inner_join(clu2gene, by=c("cluID"="clu")) %>% # 263331      8
     select(ID, genes, names)
 # one row per intron-gene pair
+# if the cluster was mapped to more than one gene, multiple rows for the intron in grouping file
 gene_list <- strsplit(bed_info$genes, split = ',')
 name_list <- strsplit(bed_info$names, split = ',')
 bed_info2 <- data.frame(

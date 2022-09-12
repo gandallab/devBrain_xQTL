@@ -22,7 +22,7 @@ GWAS_LOCI_TABLE = pd.DataFrame(
 
 
 def get_locus_chr(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     chromosome = LOCI_TABLE.loc[int(wildcards.locus), "CHR"]
@@ -30,7 +30,7 @@ def get_locus_chr(wildcards):
 
 
 def get_locus_start(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     start = LOCI_TABLE.loc[int(wildcards.locus), "START"]
@@ -38,7 +38,7 @@ def get_locus_start(wildcards):
 
 
 def get_locus_end(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     end = LOCI_TABLE.loc[int(wildcards.locus), "END"]
@@ -46,7 +46,7 @@ def get_locus_end(wildcards):
 
 
 def get_1kg_eur_bim_chr(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     chromosome = LOCI_TABLE.loc[int(wildcards.locus), "CHR"]
@@ -58,7 +58,7 @@ def get_1kg_eur_bim_chr(wildcards):
 
 
 def get_1kg_eur_bfile_chr(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     chromosome = LOCI_TABLE.loc[int(wildcards.locus), "CHR"]
@@ -288,5 +288,14 @@ rule analyze_ecaviar:
         """
 
 
-# for i in ex_90 in_90 ip_80 mic_80 per_70 rg_100 pg_80 opc_80
-# > do awk 'FNR==1 && NR!=1 {next;}{print}' results_${i}hcp_eqtl/PGC3_SCZ_wave3_public.v2/*/*sig.txt > results_${i}hcp_eqtl/PGC3_SCZ_wave3_public.v2/CLPP_sig.txt
+# for i in end_100 ex_90 in_90 ip_80 mic_80 per_70 rg_100 pg_80 opc_80
+# > do awk 'FNR==1 && NR!=1 {next;}{print}' results_${i}hcp_eqtl/MDD.Howard.PGC.2019/*/*sig.txt > results_${i}hcp_eqtl/MDD.Howard.PGC.2019/CLPP_sig.txt
+
+# for i in end_100 ex_90 in_90 ip_80 mic_80 per_70 rg_100 pg_80 opc_80
+# do cat results_${i}hcp_eqtl/MDD.Howard.PGC.2019/CLPP_sig.txt >> cell_MDD_sig.txt
+# dat <- dat %>% filter(SNP_ID != "SNP_ID")
+# dat <- dat %>% left_join(ref, by=c("gene"="ensg"))
+# dat <- dat %>% select(c(1:6),V11,V12)
+# colnames(dat)[7] <- "gene_type"
+# colnames(dat)[8] <- "gene_name"
+# write.table(dat, "cell_ADHD_sig.txt", col.names=T, row.names=F, quote=F, sep="\t")

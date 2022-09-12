@@ -1019,7 +1019,7 @@ rule merge_susie:
         module load htslib/1.9
         awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.txt | bgzip -c > {params.prefix}.txt.gz
         awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.cred.txt | bgzip -c > {params.prefix}.cred.txt.gz
-        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.snp.txt | bgzip -c > {params.prefix}.snp.txt.gz
+        # awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.snp.txt | bgzip -c > {params.prefix}.snp.txt.gz
         """
 
 

@@ -20,7 +20,7 @@ write.table(dat, "../../../colocal/results/scz_locus_33/ENSG00000168237.all_asso
 
 
 
-signif=3.400571
+signif=4.388423
 
 module load R/4.1.0-BIO
 module load python/2.7.18
@@ -34,26 +34,26 @@ module load plink/1.90b624
             --plotonly \
             --gene-table gencode \
             --build hg19 \
-            --metal /u/project/gandalm/cindywen/isoform_twas/colocal/results/scz_locus_33/ENSG00000168237.all_assoc_METAL.txt \
-            --refsnp "rs6769789" \
-            --flank 1MB \
+            --metal ENSG00000171044_all_pairs.txt \
+            --refsnp "rs2975648" \
+            --flank 200kb \
             --ld-vcf /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.vcf.gz \
             --ignore-vcf-filter \
-            --prefix /u/project/gandalm/cindywen/isoform_twas/colocal/figures/locuszoom_scz_locus33_ENSG00000168237 \
+            --prefix ENSG00000171044 \
             signifLine=\"${signif}\" \
             signifLineColor=\"gray\" \
             signifLineWidth=\"2\" \
-            showRecomb=TRUE \
+            showRecomb=FALSE \
             width=10 \
             height=7 \
-            showGenes=FALSE
+            showGenes=TRUE
             # --denote-markers-file /u/project/gandalm/cindywen/isoform_twas/colocal/results/scz_locus_5/labels.txt
             # --refsnp "rs619824" \
             # --add-refsnps "rs192569" \
 
 
 # write gwas input file; add header
-awk '{if($3=="3" && $4>=52515136 && $4<=54515136) print "chr"$3":"$4"\t"$9}' /u/project/gandalm/shared/GWAS/SCZ.Pardinas.PGC.2018/SCZ.CLOZUK_rsFiltered.txt > ~/project-gandalm/isoform_twas/colocal/results/scz_locus_113/locus.SCZ.CLOZUK_rsFiltered.txt
+awk '{if($1=="8" && $3>=8744650 && $3<=10744650) print "chr"$1":"$3"\t"$11}' /u/project/gandalm/shared/GWAS/SCZ.PGC3.2021/wave3_v3/PGC3_SCZ_wave3.european.autosome.public.v3.tsv > ~/project-gandalm/isoform_twas/colocal/locuszoom/XKR6/gwas.txt
 
 
 signif=7.30103
@@ -64,12 +64,12 @@ signif=7.30103
             --plotonly \
             --gene-table gencode \
             --build hg19 \
-            --metal /u/project/gandalm/cindywen/isoform_twas/colocal/results/scz_locus_113/locus.SCZ.CLOZUK_rsFiltered.txt \
-            --refsnp "chr3:53515136" \
-            --flank 1MB \
+            --metal gwas.txt \
+            --refsnp "chr8:10135976" \
+            --flank 200kb \
             --pop "EUR" \
             --source "1000G_Nov2014" \
-            --prefix /u/project/gandalm/cindywen/isoform_twas/colocal/figures/locuszoom_scz_locus113 \
+            --prefix gwas \
             signifLine=\"${signif}\" \
             signifLineColor=\"gray\" \
             signifLineWidth=\"2\" \
@@ -81,11 +81,33 @@ signif=7.30103
 
 
 
-# 3/8/2022 update. CT-specific results. SCZ locus 82, chr7:109069015-111069015
-for i in mixed_nominal_90 ex_nominal_90 in_nominal_90 ip_nominal_80 mic_nominal_80 opc_nominal_80 per_nominal_70 pg_nominal_80 rg_nominal_100 end_nominal_100; do awk '$1=="ENSG00000184903" {print}' <(zcat ${i}hcp/all_assoc.txt.gz) > ../../colocal/IMMP2L/${i}hcp.all_assoc.txt; done
+
+
+gene=CGREF1
+ID=ENSG00000138028
+
+for i in mixed_nominal_90 ex_nominal_90 in_nominal_90 ip_nominal_80 mic_nominal_80 opc_nominal_80 per_nominal_70 pg_nominal_80 rg_nominal_100 end_nominal_100; do awk '$1=="${ID}" {print}' <(zcat ${i}hcp/all_assoc.txt.gz) > ../../colocal/locuszoom/${gene}/${i}hcp.all_assoc.txt; done
+
+cd ../../colocal/locuszoom/${gene}/
 
 for i in mixed_nominal_90 ex_nominal_90 in_nominal_90 ip_nominal_80 mic_nominal_80 opc_nominal_80 per_nominal_70 pg_nominal_80 rg_nominal_100 end_nominal_100; do awk '{print $2"\t"$4}'  ${i}hcp.all_assoc.txt > ${i}hcp.all_assoc_METAL.txt; done
 
 for i in mixed_nominal_90 ex_nominal_90 in_nominal_90 ip_nominal_80 mic_nominal_80 opc_nominal_80 per_nominal_70 pg_nominal_80 rg_nominal_100 end_nominal_100; do awk '$1 ~ /rs/ {print}'  ${i}hcp.all_assoc_METAL.txt > ${i}hcp.all_assoc_METAL_rsidOnly.txt; done
 
 for i in mixed_nominal_90 ex_nominal_90 in_nominal_90 ip_nominal_80 mic_nominal_80 opc_nominal_80 per_nominal_70 pg_nominal_80 rg_nominal_100 end_nominal_100; do echo -e "MarkerName\tP-value" | cat - ${i}hcp.all_assoc_METAL_rsidOnly.txt > ${i}hcp.all_assoc_header.txt; done
+
+
+# in R
+files <- list.files(pattern = "all_assoc.txt$")
+> files
+ [1] "end_nominal_100hcp.all_assoc.txt"  "ex_nominal_90hcp.all_assoc.txt"
+ [3] "in_nominal_90hcp.all_assoc.txt"    "ip_nominal_80hcp.all_assoc.txt"
+ [5] "mic_nominal_80hcp.all_assoc.txt"   "mixed_nominal_90hcp.all_assoc.txt"
+ [7] "opc_nominal_80hcp.all_assoc.txt"   "per_nominal_70hcp.all_assoc.txt"
+ [9] "pg_nominal_80hcp.all_assoc.txt"    "rg_nominal_100hcp.all_assoc.txt"
+
+vec <- c()
+for (file in files) {
+dat <- read.table(file)
+vec <- append(vec,-log10(dat[which.min(abs(dat$V6-0.05)),4]))}
+vec

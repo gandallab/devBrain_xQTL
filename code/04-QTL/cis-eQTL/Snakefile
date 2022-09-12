@@ -138,28 +138,32 @@ rule all:
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/figures/perm_scatter_eur_amr.png",
         # "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_90hcp/torus.out",
         # "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/annot/eur_variant_annot.txt.gz",
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/tri{tri}_{num_hcp}hcp_aFC_{chr}.txt",
-            tri=1,
-            num_hcp=25,
-            chr=np.arange(1, 23, 1),
-        ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/tri{tri}_{num_hcp}hcp_aFC_{chr}.txt",
-            tri=2,
-            num_hcp=15,
-            chr=np.arange(1, 23, 1),
-        ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/tri{tri}_{num_hcp}hcp_aFC_{chr}.txt",
+        #     tri=1,
+        #     num_hcp=25,
+        #     chr=np.arange(1, 23, 1),
+        # ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/tri{tri}_{num_hcp}hcp_aFC_{chr}.txt",
+        #     tri=2,
+        #     num_hcp=15,
+        #     chr=np.arange(1, 23, 1),
+        # ),
         # expand(
         #     "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/tri/tri{tri}_ciseqtl_{num_hcp}hcp_perm_purity_filtered.txt.gz",
         #     zip,
         #     tri=[1, 2],
         #     num_hcp=[25, 15],
         # ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/sex_specific/{sex}_{num_hcp}HCP_cov.txt",
+        #     sex=["m", "f"],
+        #     num_hcp=np.arange(10, 101, 10),
+        # ),
         expand(
-            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/sex_specific/{sex}_{num_hcp}HCP_cov.txt",
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{sex}_ciseqtl_50hcp_perm_purity_filtered.txt.gz",
             sex=["m", "f"],
-            num_hcp=np.arange(10, 101, 10),
         ),
 
 
@@ -836,6 +840,8 @@ rule make_susie_expr:
 # expr N=629
 # geno N=629
 # cov can include relatives
+# geno file can have more samples than pheno, as long as all variants are present (i.e. use the corresponding population file)
+# cov and geno files will be matched to pheno samples
 rule run_susie:
     input:
         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.processed.susie.tsv",
@@ -1702,37 +1708,36 @@ rule merge_eur_annot:
 ################################### allelic fold change ###################################
 # Error with original script, because somehow the covariates are all read as strings
 # Daniel edited the script and generated results for bulk
-rule run_afc_tri:
-    input:
-        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/gene.counts.scaled.normalized.trimester{tri}.bed.gz",
-        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.trimester{tri}.vcf.gz",
-        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/chuanjiao/tri{tri}_{num_hcp}HCP.txt",
-        qtl="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/sig_pheno_trimester{tri}_aFC.txt",
-    output:
-        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/tri{tri}_{num_hcp}hcp_aFC_{chr}.txt",
-    resources:
-        mem_gb=4,
-        time_min=60,
-    shell:
-        """
-        . /u/local/Modules/default/init/modules.sh
-        module load python/3.6.8
-        python3 scripts/aFC_DanielVo.py \
-            --vcf {input.geno} \
-            --pheno {input.expr} \
-            --cov {input.cov} \
-            --output {output[0]} \
-            --qtl {input.qtl} \
-            --log_xform 1 \
-            --log_base 2 \
-            --boot 0 \
-            --geno GT \
-            --chr {wildcards.chr}
-        """
+# rule run_afc_tri:
+#     input:
+#         expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/gene.counts.scaled.normalized.trimester{tri}.bed.gz",
+#         geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.trimester{tri}.vcf.gz",
+#         cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/chuanjiao/tri{tri}_{num_hcp}HCP.txt",
+#         qtl="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/sig_pheno_trimester{tri}_aFC.txt",
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/tri{tri}_{num_hcp}hcp_aFC_{chr}.txt",
+#     resources:
+#         mem_gb=4,
+#         time_min=60,
+#     shell:
+#         """
+#         . /u/local/Modules/default/init/modules.sh
+#         module load python/3.6.8
+#         python3 scripts/aFC_DanielVo.py \
+#             --vcf {input.geno} \
+#             --pheno {input.expr} \
+#             --cov {input.cov} \
+#             --output {output[0]} \
+#             --qtl {input.qtl} \
+#             --log_xform 1 \
+#             --log_base 2 \
+#             --boot 0 \
+#             --geno GT \
+#             --chr {wildcards.chr}
+#         """
 
 
 ################################### trimester susie ###################################
-# alternatively, could separate the EUR dosage file
 rule vcf_to_dosage_trimester:
     input:
         vcf="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.trimester{tri}.vcf.gz",
@@ -1954,4 +1959,105 @@ rule sex_cov:
             --num_gpc {params.num_gpc} \
             --outdir {params.outdir} \
             --prefix {params.prefix}
+        """
+
+
+rule run_susie_sex:
+    input:
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{sex}.susie.tsv",
+        pheno_meta=(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/phenotype_meta.tsv"
+        ),
+        sample_meta="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{sex}_sample_meta.tsv",
+        sig_pheno="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/ALL_{sex}_perm_50hcp/sig_pheno.txt",
+        genotype_matrix="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.dose.tsv.gz",
+        covariates="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/sex_specific/{sex}_50HCP_cov.txt",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{{sex}}_ciseqtl_50hcp_perm.{{batch}}_"
+            + config["SUSIE_N_BATCH"]
+            + ".{file}",
+            file=["txt", "cred.txt", "snp.txt"],
+        ),
+    resources:
+        mem_gb=4,
+        num_cores=4,
+        time_min=120,
+    params:
+        cisdistance=1000000,
+        permuted="true",
+        qtl_group="{sex}_ciseqtl_50hcp_perm",
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/",
+        quant_method="gene_counts",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        mkdir -p {params.out_dir}
+
+        Rscript scripts/run_susie_customized.R \
+            --expression_matrix {input.expr} \
+            --phenotype_meta {input.pheno_meta} \
+            --sample_meta {input.sample_meta} \
+            --sig_pheno {input.sig_pheno} \
+            --covariates {input.covariates} \
+            --genotype_matrix {input.genotype_matrix} \
+            --chunk '{wildcards.batch} {config[SUSIE_N_BATCH]}' \
+            --cisdistance {params.cisdistance} \
+            --out_prefix {params.out_dir}{params.qtl_group}.{wildcards.batch}_{config[SUSIE_N_BATCH]} \
+            --permuted {params.permuted} \
+            --qtl_group {params.qtl_group} \
+            --quant_method {params.quant_method}
+        """
+
+
+rule merge_susie_sex:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{{sex}}_ciseqtl_50hcp_perm.{batch}_"
+            + config["SUSIE_N_BATCH"]
+            + ".{file}",
+            file=["txt", "cred.txt", "snp.txt"],
+            batch=np.arange(1, 501, 1),
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{{sex}}_ciseqtl_50hcp_perm.{file}",
+            file=["txt.gz", "cred.txt.gz"],
+        ),
+    resources:
+        mem_gb=6,
+        time_min=120,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{sex}_ciseqtl_50hcp_perm",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.12
+        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.txt | bgzip -c > {params.prefix}.txt.gz
+        awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.cred.txt | bgzip -c > {params.prefix}.cred.txt.gz
+        # awk 'NR == 1 || FNR > 1{{print}}' {params.prefix}.*_{config[SUSIE_N_BATCH]}.snp.txt | bgzip -c > {params.prefix}.snp.txt.gz
+        """
+
+
+rule sort_susie_sex:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{{sex}}_ciseqtl_50hcp_perm.{file}",
+            file=["txt.gz", "cred.txt.gz"],
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{sex}_ciseqtl_50hcp_perm_susie_merged.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{sex}_ciseqtl_50hcp_perm_purity_filtered.txt.gz",
+    resources:
+        mem_gb=6,
+        time_min=120,
+    params:
+        prefix="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{sex}_ciseqtl_50hcp_perm",
+    shell:
+        """ 
+        . /u/local/Modules/default/init/modules.sh
+        module load htslib/1.12
+        gunzip -c {input[0]} > {params.prefix}_susie_merged.txt
+        (head -n 1 {params.prefix}_susie_merged.txt && tail -n +2 {params.prefix}_susie_merged.txt | sort -k3 -k4n ) | bgzip > {params.prefix}_purity_filtered.txt.gz
         """

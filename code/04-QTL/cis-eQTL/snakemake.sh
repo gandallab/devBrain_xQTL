@@ -14,8 +14,8 @@ conda activate snakemake
 snakemake \
     --snakefile Snakefile \
     --jobscript cluster_jobscript.sh \
-    --cluster-sync "qsub -l h_data={resources.mem_gb}G,h_rt=00:{resources.time_min}:00 -pe shared {resources.num_cores} -o /u/project/gandalm/cindywen/isoform_twas/eqtl_new/log/job.out.pipeline" \
-    --jobs 50 \
+    --cluster-sync "qsub -l h_data={resources.mem_gb}G,h_rt=00:{resources.time_min}:00,highp -pe shared {resources.num_cores} -o /u/project/gandalm/cindywen/isoform_twas/eqtl_new/log/job.out.pipeline" \
+    --jobs 30 \
     --max-jobs-per-second 10 \
     -T 0 \
     -w 30 \

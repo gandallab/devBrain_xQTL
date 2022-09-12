@@ -79,11 +79,10 @@ importQtlmapCovariates <- function(covariates_path){
   pc_matrix = read.table(covariates_path, check.names = F, header = T, stringsAsFactors = F)
 
   # Added this. Testdata does not have chracter qualitative covariates
-  for (i in 2:ncol(pc_matrix)) {
-    if (pc_matrix[6,i] == "M"){pc_matrix[6,i] = 0}
-    if (pc_matrix[6,i] == "F"){pc_matrix[6,i] = 1}
-  }
-
+  pc_matrix[pc_matrix == "M"] <- 0
+  pc_matrix[pc_matrix == "F"] <- 1
+  # Error of colinear cov matrix for male/female eQTL. All sex is 0/1
+  pc_matrix <- pc_matrix[apply(pc_matrix[-1], 1, var) != 0, ]
   pc_transpose = t(pc_matrix[,-1])
   colnames(pc_transpose) = pc_matrix$id
   pc_df = dplyr::mutate(as.data.frame(pc_transpose), genotype_id = rownames(pc_transpose)) %>%
@@ -346,12 +345,12 @@ results = purrr::map(selected_phenotypes, ~finemapPhenotype(., selected_qtl_grou
 
 #Define fine-mapped regions
 region_df = dplyr::transmute(phenotype_list, phenotype_id, finemapped_region = paste0("chr", chromosome, ":", phenotype_pos - cis_distance, "-", phenotype_pos + cis_distance))
-message("region df OK!")
+# message("region df OK!")
 
 #Extract credible sets from finemapping results
 res = purrr::map(results, extractResults) %>%
   purrr::transpose()
-message("res OK!")
+# message("res OK!")
 
 #Extract information about all variants
 variant_df <- purrr::map_df(res$variant_df, identity, .id = "phenotype_id")
@@ -363,11 +362,11 @@ if(nrow(variant_df) > 0){
     dplyr::mutate(cs_index = cs_id) %>%
     dplyr::mutate(cs_id = paste(phenotype_id, cs_index, sep = "_"))
 }
-message("variant df OK!")
+# message("variant df OK!")
 
 #Extraxt information about credible sets
 cs_df <- purrr::map_df(res$cs_df, identity, .id = "phenotype_id")
-message("cs df OK!")
+# message("cs df OK!")
 
 if(nrow(cs_df) > 0){
   cs_df = dplyr::left_join(cs_df, region_df, by = "phenotype_id") %>%

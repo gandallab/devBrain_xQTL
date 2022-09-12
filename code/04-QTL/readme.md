@@ -1,18 +1,20 @@
 # QTL
 ## cis-eQTL
-- `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
-- `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
-- `susie.ipynb`: susie finemapping results
+- `ancestry.ipynb`
+- `combat-seq`
 - `decon.ipynb`: cell type specific and interacting analysis
-- `cell_specific.ipynb`: (OUTDATED) cell type/group specific and interaction results
-- `func_enrich.ipynb`: functional enrichment analysis of QTL
-- `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
+- `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - `fetal_adult.ipynb`
-- `paintor.smk`
+- `func_enrich.ipynb`: functional enrichment analysis of QTL
+- `locuszoom.ipynb`
+- `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
+- `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
 - `pLI.ipynb`
 - `sex_specific.ipynb`
--  `SV.ipynb`
+- `susie.ipynb`: susie finemapping results
 - `tri_specific.ipynb`
+- `walker_fetal`
+
 - `Snakefile`
 ```
 prep
@@ -93,6 +95,8 @@ rules:
 - `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx
 ## cis-sQTL
 - `sqtl_analysis.ipynb`
+- `e_iso_s.ipynb`
+- `qvalue_pi0.ipynb`
 - `check.ipynb`: check chunk size
 - `Snakefile`
 ```

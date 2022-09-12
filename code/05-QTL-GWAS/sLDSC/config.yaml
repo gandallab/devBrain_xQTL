@@ -1,9 +1,11 @@
 LDSC_PATH: "/u/project/gandalm/shared/apps/ldsc/"
 GWAS_LIST:
-- file: /u/project/gandalm/shared/GWAS/SCZ.Pardinas.PGC.2018/SCZ.Clozuk.2018
-  trait: SCZ.Clozuk.2018
-- file: /u/project/gandalm/shared/GWAS/ASD.Grove.iPSYCHPGC.2019/ASD.iPSYCHPGC.2018
-  trait: ASD.iPSYCHPGC.2018
+# - file: /u/project/gandalm/shared/GWAS/SCZ.PGC3.2021/PGC3_SCZ_wave3_public.v2
+#   trait: PGC3_SCZ_wave3_public.v2
+# - file: /u/project/gandalm/shared/GWAS/SCZ.Pardinas.PGC.2018/SCZ.Clozuk.2018
+#   trait: SCZ.Clozuk.2018
+# - file: /u/project/gandalm/shared/GWAS/ASD.Grove.iPSYCHPGC.2019/ASD.iPSYCHPGC.2018
+#   trait: ASD.iPSYCHPGC.2018
 - file: /u/project/gandalm/shared/GWAS/Intelligence.Savage.2018/Intelligence.SavageNatGen.2018
   trait: Intelligence.SavageNatGen.2018
 - file: /u/project/gandalm/shared/GWAS/EduYears.Lee.SSGAC.2018/EduYears.SSGAC.Lee2018
@@ -12,10 +14,20 @@ GWAS_LIST:
   trait: ALZ.Jansen.2019
 - file: /u/project/gandalm/shared/GWAS/Insomnia.Jansen.2018/Insomnia.Jansen.2018
   trait: Insomnia.Jansen.2018
-- file: /u/project/gandalm/shared/GWAS/BD.PGC3.2019/BD.PGC3
-  trait: BD.PGC3
-- file: /u/project/gandalm/shared/GWAS/MDD.Wray.PGC.2018/MDD.PGC.2018
-  trait: MDD.PGC.2018
+# - file: /u/project/gandalm/shared/GWAS/BD.PGC3.2019/BD.PGC3
+#   trait: BD.PGC3
+# - file: /u/project/gandalm/shared/GWAS/MDD.Wray.PGC.2018/MDD.PGC.2018
+#   trait: MDD.PGC.2018
 
 
-
+# colocalization GWAS list
+- trait: PGC3_SCZ_wave3.european.autosome.public.v3
+  file: /u/project/gandalm/shared/GWAS/SCZ.PGC3.2021/wave3_v3/PGC3_SCZ_wave3.european.autosome.public.v3
+- trait: pgc-bip2021-all
+  file: /u/project/gandalm/shared/GWAS/BIP.Mullins.2021/pgc-bip2021-all
+- trait: ASD.iPSYCHPGC.2018
+  file: /u/project/gandalm/shared/GWAS/ASD.Grove.iPSYCHPGC.2019/ASD.iPSYCHPGC.2018
+- trait: ADHD.Demontis.2019
+  file: /u/project/gandalm/shared/GWAS/ADHD.Demontis.PGC.2018/ADHD.Demontis.2019
+- trait: MDD.Howard.PGC.2019
+  file: /u/project/gandalm/shared/GWAS/MDD.Howard.PGC.2019/MDD.Howard.PGC.2019

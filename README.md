@@ -1,5 +1,6 @@
 # Fetal brain mega QTL
-***Note: pipeline descriptions (i.e. Snakemake rules) are not up-to-date here. Please see the actual files.***
+***Note: please see snakefiles for exact rules and descriptions***
+
 ## Pipeline
 #### 1: Munging data
 #### 2: Genotype
@@ -65,19 +66,21 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
     + `check.ipynb`: called SNP from BAM, merged with imputed genotype (Mike)
 #### 4: xQTL
 ##### cis-eQTL
-- `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
-- `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
-- `susie.ipynb`: susie finemapping results
+- `ancestry.ipynb`
+- `combat-seq`
 - `decon.ipynb`: cell type specific and interacting analysis
-- `cell_specific.ipynb`: (OUTDATED) cell type/group specific and interaction results
-- `func_enrich.ipynb`: functional enrichment analysis of QTL
-- `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
+- `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - `fetal_adult.ipynb`
-- `paintor.smk`
+- `func_enrich.ipynb`: functional enrichment analysis of QTL
+- `locuszoom.ipynb`
+- `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
+- `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
 - `pLI.ipynb`
 - `sex_specific.ipynb`
--  `SV.ipynb`
+- `susie.ipynb`: susie finemapping results
 - `tri_specific.ipynb`
+- `walker_fetal`
+
 - `Snakefile`
 ```
 prep
@@ -158,6 +161,8 @@ rules:
 - `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx did
 ##### cis-sQTL
 - `sqtl_analysis.ipynb`
+- `e_iso_s.ipynb`
+- `qvalue_pi0.ipynb`
 - `check.ipynb`: check chunk size
 - `Snakefile`
 ```
@@ -284,10 +289,16 @@ eQTL maxCPP
     - partition_h2_eqtl_maxCPP
     - partition_h2_gtex_brain_cortext_maxCPP
 isoQTL_maxCPP
+sQTL_maxCPP
+CT specific maxCPP
+jointly e, iso, sQTL maxCPP
+trimester specific maxCPP
 ```
 ##### TWAS-FUSION
 - `TWAS.ipynb`
-- `Snakefile`: tested running with and without rank normalization of gene expression
+- `LDREF.ipynb`
+- `run_focus.sh`
+- `Snakefile`
 ```
 rules:
 - make_plink
@@ -327,91 +338,19 @@ Overall splicing
     - expr_rel_intron
     - score_all_intron
     - h2med_all_intron
+Trimester expression genes
+    - score_all_gene_tri(test): used (1) trimester specific covaraites and (2/test) EUR corrected file separated into trimesters
+    - h2_med_all_gene_tri(test)
+Sex specific
 ```
 ##### Colocalization (eCAVIAR)
-- see snakefiles and ipynb
-------
-## Data and results (To be updated)
-#### Quantifications
-##### Gene (`working/gene/`)
-- [x] Estimated counts (`"countsFromAbundance="lengthScaledTPM"`): `gene.noVersion.scaled.counts.tsv`
-- [x] TPM: `gene.noVersion.TPM.tsv`
-- [x] Filtered for expression, normalized, variance-stabilized, transformed, ComBat: `gene.counts.scaled.normalized.bed.gz`
-##### Isoform (`working/transcript/`)
-- [x] Estimated counts (`"countsFromAbundance="lengthScaledTPM"`): `tx.counts.scaled.tsv`
-- [x] TPM: `tx.TPM.tsv`
-- [x] Filtered for expression, normalized, variance-stabilized, transformed, ComBat: `tx.counts.scaled.normalized.bed.gz`
-##### Splicing (`working/splicing/`)
-- [x] Intron excision ratios: filtered, normalized, ComBat: `leafcutter_perind.counts.nochr.gz.qqnorm_all_fixSubj_combat.bed.gz`
-
-#### Genotype (`working/geno/`)
-***Please note some TOPMED variants are not mapped to rsID. They are still in hg38 coordinates as ID (chr:pos). Their coordinates are hg19 in the final genotype file.***
-- [x] AMR, AFR, EUR genotype plink files used for FUSION
-- [x] genotype PC EUR
-
-#### Covariates (`working/covariates/`)
-- [x] picard metrics
-- [x] metadata
-
-#### Trimester (`working/EUR_trimester/`)
-- [x] Gene expression, covaraites, genotype. For the 280 EUR with relatives removed, 137 trimester1, 141 trimester2 
-
-#### cis-eQTL (`output/cis_eQTL_nominal_permutation_conditional_finemapping/` and `cis_eQTL_cell_type_specific`)
-* Combined (`shared_90HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_info.txt`. Filter for significant: `qval < .05`
-- [ ] Permutation pass: full list of eQTL with p-value passing nominal threshold: 
-- [x] Conditional pass, top eQTL per rank: `conditional_top_variants.txt`. To remove variants with backward P-value that is not below the threshold of this feature: `filter(V20 == 1)`
-- [x] SuSiE finemapping: all variants in non-low purity CS: `mixed_ciseqtl_90hcp_perm_purity_filtered.txt.gz`
-* EUR (`EUR_50HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_info.txt`. Filter for significant: `qval < .05`
-* AMR (`AMR_15HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_info.txt`. Filter for significant: `qval < .05`
-* AFR (`AFR_25HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_info.txt`. Filter for significant: `qval < .05`
-* Cell type-specific 
-- [x] Permutation pass significant
-
-#### cis-isoQTL (`output/cis_isoQTL_nominal_permutation_conditional_finemapping/`)
-* Combined (`shared_70HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-- [ ] Permutation pass: full list of isoQTL with p-value passing nominal threshold: 
-- [x] Conditional pass, top isoQTL per rank: `conditional_top_variants.txt`. To remove variants with backward P-value that is not below the threshold of this feature: `filter(V20 == 1)`
-- [x] SuSiE finemapping: all variants in non-low purity CS: `mixed_cisisoqtl_70hcp_perm_purity_filtered.txt.gz`
-* EUR (`EUR_60HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-* AMR (`AMR_15HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-* AFR (`AFR_20HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-
-#### cis-sQTL (`output/cis_sQTL_nominal_permutation_conditional_finemapping/`)
-* Combined (`shared_35HCP_1e5/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-- [ ] Permutation pass: full list of sQTL with p-value passing nominal threshold: 
-- [ ] Conditional pass: top sQTL per rank: 
-- [ ] SuSiE finemapping; all variants in non-low purity CS: 
-* Combined (`shared_40HCP_1e6/`)
-- [x] Grouped permutation: `group.perm.genes.txt.gz`. Filter for significant: `qval < .05`
-* EUR (`EUR_25HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-* AMR (`AMR_10HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-* AFR (`AFR_12HCP/`)
-- [x] Nominal pass: `all_assoc_nominal.txt.gz`.  Filter for significant: `fdr <= .05`
-- [x] Permutation pass: `all_assoc_perm_gene_info.txt`. Filter for significant: `qval < .05`
-
-#### trans-eQTL (`output/trans_eQTL/`)
-
-#### FUSION-TWAS weights (`output/TWAS_wights/`)
-- EUR, AMR, AFR; with or without rank normalization
+- `eCAVIAR.ipynb`
+- `GRIN2A.ipynb`
+- `locuszoom.ipynb`
+- `sqtlviztools.ipynb`
+- `Visualizing_Loci_working.ipynb`
+- `celltype.smk`
+- `eqtl.smk`
+- `isoqtl.smk`
+- `sex_tri.smk`
+- `sqtl.smk`

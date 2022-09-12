@@ -12,7 +12,7 @@ dat <- dat[,c(3,4,1)]
 write.table(dat, "../../code/sqtl_extract_cis_list.txt", col.names=F,row.names=F,quote=F,sep="\t")
 
 Then submit jobs with following. Celine and Ellen could not run this, had problem with qsub command.
-cat isoqtl_extract_cis_list.txt | while read trait locus array; do qsub -t $array ecaviar_isoqtl_extract_cis.sh $trait $locus
+cat isoqtl_extract_cis_list.txt | while read trait locus array; do qsub -t $array isoqtl_extract_cis.sh $trait $locus
 
 Finally came to the easier solution, directly submit jobs if assoc file is missing.
 
@@ -27,3 +27,7 @@ for locus in {36..40};
         fi; 
     done; 
 done
+
+
+PGC wave 3 v3
+- use EUR sum stats, loci info/index snp table use Supplementary table 1 from primary analysis, 307 autosomal loci excluding MHC

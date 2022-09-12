@@ -1,3 +1,0 @@
-WildcardError in line 132 of /u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile:
-No values given for wildcard 'chr_num'.
-  File "/u/project/gandalm/cindywen/isoform_twas/genotype/scripts_new/post-imputation/Snakefile", line 132, in <module>

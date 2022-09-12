@@ -13,7 +13,7 @@ snakemake \
     --snakefile Snakefile \
     --jobscript cluster_jobscript.sh \
     --cluster-sync "qsub -l h_data={resources.mem_gb}G,h_rt=00:{resources.time_min}:00 -pe shared {resources.num_cores} -o ./../log/job.out.pipeline" \
-    --jobs 120 \
+    --jobs 100 \
     --max-jobs-per-second 1 \
     -T 0 \
     -w 15 \

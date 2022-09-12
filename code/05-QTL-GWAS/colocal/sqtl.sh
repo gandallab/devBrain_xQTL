@@ -1,6 +1,6 @@
 #!/bin/bash -l 
 #$ -cwd
-#$ -l h_data=8G,h_rt=4:00:00
+#$ -l h_data=8G,h_rt=4:00:00,highp
 #$ -j y
 #$ -o /u/project/gandalm/cindywen/isoform_twas/colocal/log/job.out.snakemake.s
 #$ -m a
@@ -13,7 +13,7 @@ conda activate snakemake
 snakemake \
     --snakefile sqtl.smk \
     --jobscript cluster_jobscript.sh \
-    --cluster-sync "qsub -l h_data={resources.mem_gb}G,h_rt=00:{resources.time_min}:00 -pe shared {resources.num_cores} -o /u/project/gandalm/cindywen/isoform_twas/colocal/log/job.out.pipeline.s" \
+    --cluster-sync "qsub -l h_data={resources.mem_gb}G,h_rt=00:{resources.time_min}:00,highp -pe shared {resources.num_cores} -o /u/project/gandalm/cindywen/isoform_twas/colocal/log/job.out.pipeline.s" \
     --jobs 60 \
     --max-jobs-per-second 10 \
     -T 0 \

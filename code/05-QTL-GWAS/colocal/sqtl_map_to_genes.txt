@@ -1,0 +1,22 @@
+dat <- fread("CLPP_sig.txt",data.table = F)
+length(unique(dat$locus))
+length(unique(dat$gene))
+
+gtex <- fread("~/project-gandalm/isoform_twas/sqtl_new/leafviz_annot/leafcutter_clusters_to_genes.txt",data.table=F)
+gtex$clu <- gsub("chr","",gtex$clu)
+gtex <- gtex %>% separate(clu, c("clu_chr","clu_id"),sep=":")
+
+dat <- dat %>% separate(gene, c("intron_chr","intron_start","intron_end","clu"),sep = ":", remove = FALSE)
+length(unique(dat$clu))
+sum(unique(dat$clu) %in% gtex$clu_id)
+
+dat <- dat %>% left_join(gtex, by = c("clu"="clu_id"))
+colnames(dat)[5] <- "intron"
+colnames(dat)[11] <- "genes_gtex"
+colnames(dat)[12] <- "names_gtex"
+
+load("~/project-gandalm/isoform_twas/sqtl_new/leafviz_annot/all.introns.tested.RData")
+sum(unique(dat$intron) %in% unique(pheno$ID))
+length(unique(dat$intron))
+dat <- dat %>% left_join(pheno, by = c("intron"="ID"))
+write.table(dat, "CLPP_sig_info.txt",col.names=T,row.names=F,quote=F,sep="\t")

@@ -29,7 +29,7 @@ GWAS_LOCI_TABLE = pd.DataFrame(
 
 
 def get_locus_chr(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     chromosome = LOCI_TABLE.loc[int(wildcards.locus), "CHR"]
@@ -37,7 +37,7 @@ def get_locus_chr(wildcards):
 
 
 def get_locus_start(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     start = LOCI_TABLE.loc[int(wildcards.locus), "START"]
@@ -45,7 +45,7 @@ def get_locus_start(wildcards):
 
 
 def get_locus_end(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     end = LOCI_TABLE.loc[int(wildcards.locus), "END"]
@@ -53,7 +53,7 @@ def get_locus_end(wildcards):
 
 
 def get_1kg_eur_bim_chr(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     chromosome = LOCI_TABLE.loc[int(wildcards.locus), "CHR"]
@@ -65,7 +65,7 @@ def get_1kg_eur_bim_chr(wildcards):
 
 
 def get_1kg_eur_bfile_chr(wildcards):
-    LOCI_TABLE = pd.read_table(str(wildcards.trait) + "_1Mb.txt").set_index(
+    LOCI_TABLE = pd.read_table("tables/" + str(wildcards.trait) + "_1Mb.txt").set_index(
         "LOCUS", drop=True
     )
     chromosome = LOCI_TABLE.loc[int(wildcards.locus), "CHR"]
@@ -87,7 +87,7 @@ rule all:
 
 rule extract_gwas_loci:
     input:
-        "{trait}_1Mb.txt",
+        "tables/{trait}_1Mb.txt",
         gwas_file=lambda wildcards: GWAS_DIC[wildcards.trait],
     output:
         "/u/project/gandalm/cindywen/isoform_twas/colocal/results_eqtl/{trait}/locus_{locus}/gwas.txt",
@@ -104,7 +104,7 @@ rule extract_gwas_loci:
     shell:
         """
         mkdir -p /u/project/gandalm/cindywen/isoform_twas/colocal/results_eqtl/{wildcards.trait}/locus_{wildcards.locus}/
-        awk '{{if($7=="{params.chromosome}" && $8>={params.start} && $8<={params.end}) print}}' <(zcat {input.gwas_file}) > {output[0]}
+        awk '{{if($6=="{params.chromosome}" && $7>={params.start} && $7<={params.end}) print}}' <(zcat {input.gwas_file}) > {output[0]}
         """
 
 

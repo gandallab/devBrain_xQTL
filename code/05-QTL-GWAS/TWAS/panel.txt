@@ -3,3 +3,5 @@ eur	280
 amr	162
 afr	135
 all	629
+tri1	137
+tri2	141
