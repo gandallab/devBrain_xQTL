@@ -1,16 +1,15 @@
 # Fetal brain mega QTL
 ***Note: please see snakefiles for exact rules and descriptions***
 
-## Pipeline
-#### 1: Munging data
-#### 2: Genotype
-##### Pre-imputation
+## 1: Munging data
+## 2: Genotype
+### 2-1: Pre-imputation
 - Run `plinkQC` on data as a sanity check
 - First apply PLINK filters, then split by chromosome and sort
     - Walker data is already filtered; split by chromosome and impute
     - For all the other datasets, we applied the same filters that the Walker data used `--hwe 1e-6 --maf 0.01 --mind 0.10 --geno 0.05`
     - Note: for HDBR, we used `--mind 0.3`; for LIBD, we fixed strand flips by running an extra step of [conform-gt](https://faculty.washington.edu/browning/conform-gt.html), which automatically splits the data by chromosome
-##### Post-imputation
+### 2-2: Post-imputation
 - Scripts in `prelim/`: inputs are imputed genotype files downloaded from Michigan Imputation Server; concatenate by chromosomes, index, filter by R2, and take the ***intersection*** of high impute quality variants across datasets
     - Note: except for Walker data, we applied R2>.3 filter during imputation; so here we only applied R2>.3 on Walker imputed data and intersected with the other datasets
 - `ancestry.ipynb`: infer data ancestry, make plots
@@ -38,7 +37,7 @@ rules:
 - add_chr: for STAR 2nd pass
 - get_maf: for susie ancestry analysis, get MAF of variants
 ```
-#### 3: RNA-seq
+## 3: RNA-seq
 -   Pre-alignment QC [FastQC v0.11.9](https://github.com/s-andrews/FastQC)
 -   Alignment [STAR-2.7.3a](https://github.com/alexdobin/STAR), index with [GENCODE v29lift37](https://www.gencodegenes.org/) genome and annotation
     - Note: there is a new run of STAR for sQTL
@@ -64,8 +63,8 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 -   Sample swap check: 
     + [VerifyBamID](https://genome.sph.umich.edu/wiki/VerifyBamID) (slow. Use `--smID` to add subject ID to BAM sequence file)
     + `check.ipynb`: called SNP from BAM, merged with imputed genotype (Mike)
-#### 4: xQTL
-##### cis-eQTL
+## 4: xQTL
+### 4-1: cis-eQTL
 - `ancestry.ipynb`
 - `combat-seq`
 - `decon.ipynb`: cell type specific and interacting analysis
@@ -155,11 +154,11 @@ cell type/group interaction
 ```
 rules:
 ```
-##### cis-isoQTL
+### 4-2: cis-isoQTL
 - `isoqtl_analysis.ipynb`
 - `prep.ipynb`: sex and trimester specific QTL
 - `Snakefile`: follows a similar pipeline as cis-eQTL, except that run grouped permutation as GTEx did
-##### cis-sQTL
+### 4-3: cis-sQTL
 - `sqtl_analysis.ipynb`
 - `e_iso_s.ipynb`
 - `qvalue_pi0.ipynb`
@@ -226,7 +225,7 @@ Torus: functional enrichment
     - make_torus_input
     - run_torus
 ```
-##### trans
+### 4-4: trans
 - `gbat.ipynb`
 - `Snakefile`
 ```
@@ -245,7 +244,7 @@ rules:
 - qval
 - sig
 ```
-##### APEX
+### 4-5: APEX
 - `apex_analysis.ipynb`
 - `Snakefile`:
 ```
@@ -266,8 +265,8 @@ APEX LMM mapping with grm
 APEX trans
     - trans_ols
 ```
-#### 5: Integrative
-##### sLDSC 
+## 5: Integrative analysis
+### 5-1: sLDSC 
 - `ldsc_analysis.ipynb`
 - `Snakefile`
 ```
@@ -294,7 +293,7 @@ CT specific maxCPP
 jointly e, iso, sQTL maxCPP
 trimester specific maxCPP
 ```
-##### TWAS-FUSION
+### 5-2: TWAS-FUSION
 - `TWAS.ipynb`
 - `LDREF.ipynb`
 - `run_focus.sh`
@@ -312,7 +311,7 @@ rules:
 - chr_sig_rn
 - pos_process_rn
 ```
-##### MESC
+### 5-3: MESC
 - `MESC.ipynb`
 - `Snakefile`
 ```
@@ -343,7 +342,7 @@ Trimester expression genes
     - h2_med_all_gene_tri(test)
 Sex specific
 ```
-##### Colocalization (eCAVIAR)
+### 5-4: Colocalization (eCAVIAR)
 - `eCAVIAR.ipynb`
 - `GRIN2A.ipynb`
 - `locuszoom.ipynb`
