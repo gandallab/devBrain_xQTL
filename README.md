@@ -1,5 +1,4 @@
 # Fetal brain mega QTL
-***Note: please see snakefiles for exact rules and descriptions***
 
 ## 1: Munging data
 ## 2: Genotype
