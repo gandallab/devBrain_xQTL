@@ -165,6 +165,8 @@ rule all:
             "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/sex/{sex}_ciseqtl_50hcp_perm_purity_filtered.txt.gz",
             sex=["m", "f"],
         ),
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri1_conditional_25hcp/conditional_top_variants.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri2_conditional_15hcp/conditional_top_variants.txt",
 
 
 rule expr_prep:
@@ -191,7 +193,6 @@ rule expr_prep:
         mem_gb=8,
         time_min=60,
     params:
-        script="scripts/expr_prep.R",
         geno_subj_dir="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/geno_subj/",
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/",
         level="gene",
@@ -201,7 +202,7 @@ rule expr_prep:
         module load R/3.6.0
         module load htslib/1.9
 
-        Rscript {params.script} \
+        Rscript scripts/expr_prep.R \
             --gene_count {input[0]} \
             --gene_gtf {input[1]} \
             --gene_tpm {input[2]} \
@@ -240,7 +241,6 @@ rule ancestry_expr:
         mem_gb=4,
         time_min=60,
     params:
-        script="scripts/ancestry_expr.R",
         data_dir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/",
         level="gene",
     shell:
@@ -250,7 +250,7 @@ rule ancestry_expr:
         module load htslib/1.9
 
         mkdir -p {params.data_dir}{wildcards.ancestry}
-        Rscript {params.script} \
+        Rscript scripts/ancestry_expr.R \
             --data_dir {params.data_dir} \
             --ancestry {wildcards.ancestry} \
             --subj_list {input[4]} \
@@ -274,7 +274,6 @@ rule cov:
         mem_gb=8,
         time_min=60,
     params:
-        script="scripts/cov.R",
         num_gpc=5,
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/",
     shell:
@@ -282,7 +281,7 @@ rule cov:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/cov.R \
             --num_hcp {wildcards.num_hcp} \
             --expr {input.expr} \
             --picard {input.picard} \
@@ -308,7 +307,6 @@ rule ancestry_cov:
         mem_gb=8,
         time_min=60,
     params:
-        script="scripts/ancestry_cov.R",
         num_gpc=5,
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/",
     shell:
@@ -316,7 +314,7 @@ rule ancestry_cov:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/ancestry_cov.R \
             --num_hcp {wildcards.num_hcp} \
             --expr {input.expr} \
             --picard {input.picard} \
@@ -427,13 +425,12 @@ rule call_nominal:
         time_min=160,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_nominal_{num_hcp}hcp/",
-        script="scripts/call_nominal.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/call_nominal.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
@@ -479,13 +476,12 @@ rule ancestry_call_nominal:
         time_min=160,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_nominal_{num_hcp}HCP/",
-        script="scripts/call_nominal.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/call_nominal.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
@@ -594,13 +590,12 @@ rule call_perm:
         time_min=120,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/",
-        script="scripts/call_perm.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/call_perm.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
@@ -642,13 +637,12 @@ rule ancestry_call_perm:
         time_min=120,
     params:
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/{ancestry}_perm_{num_hcp}HCP/",
-        script="scripts/call_perm.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/call_perm.R \
             --outdir {params.outdir}
         gzip {params.outdir}all_assoc.txt
         """
@@ -664,13 +658,12 @@ rule permutations_all_threshold:
         mem_gb=6,
         time_min=120,
     params:
-        script="scripts/permutations_all_threshold.R",
         outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/mixed_perm_90hcp/",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/permutations_all_threshold.R \
             --outdir {params.outdir}
         gzip {params.outdir}permutations_all_threshold.txt
         """
@@ -801,13 +794,12 @@ rule make_susie_meta:
         mem_gb=4,
         time_min=60,
     params:
-        script="scripts/make_susie_meta.R",
         qtl_group="mixed_ciseqtl_90hcp_perm",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/make_susie_meta.R \
             --bed {input[0]} \
             --qtl_group {params.qtl_group} \
             --exclude_rel {input[1]}
@@ -824,13 +816,12 @@ rule make_susie_expr:
         mem_gb=4,
         time_min=60,
     params:
-        script="scripts/make_susie_expr.R",
         outname="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/gene.counts.processed.susie.tsv",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/make_susie_expr.R \
             --input {input[0]} \
             --outname {params.outname} \
             --exclude_rel {input[1]}
@@ -868,7 +859,6 @@ rule run_susie:
         num_cores=4,
         time_min=120,
     params:
-        script="scripts/run_susie_customized.R",
         cisdistance=1000000,
         permuted="true",
         qtl_group="mixed_ciseqtl_90hcp_perm",
@@ -880,7 +870,7 @@ rule run_susie:
         module load R/3.6.0
         mkdir -p {params.out_dir}
 
-        Rscript {params.script} \
+        Rscript scripts/run_susie_customized.R \
             --expression_matrix {input.expr} \
             --phenotype_meta {input.pheno_meta} \
             --sample_meta {input.sample_meta} \
@@ -1002,13 +992,12 @@ rule make_susie_meta_ancestry:
         mem_gb=4,
         time_min=60,
     params:
-        script="scripts/make_susie_meta.R",
         qtl_group="{ancestry}_ciseqtl_{num_hcp}hcp_perm",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/make_susie_meta.R \
             --bed {input[0]} \
             --qtl_group {params.qtl_group} \
             --exclude_rel {input[1]}
@@ -1025,13 +1014,12 @@ rule make_susie_expr_ancestry:
         mem_gb=4,
         time_min=60,
     params:
-        script="scripts/make_susie_expr.R",
         outname="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/{ancestry}/gene.counts.processed.susie.tsv",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
-        Rscript {params.script} \
+        Rscript scripts/make_susie_expr.R \
             --input {input[0]} \
             --outname {params.outname} \
             --exclude_rel {input[1]}
@@ -1058,7 +1046,6 @@ rule run_susie_ancestry:
         num_cores=4,
         time_min=120,
     params:
-        script="scripts/run_susie_customized.R",
         cisdistance=1000000,
         permuted="true",
         qtl_group="{ancestry}_ciseqtl_{num_hcp}hcp_perm",
@@ -1070,7 +1057,7 @@ rule run_susie_ancestry:
         module load R/3.6.0
         mkdir -p {params.out_dir}
 
-        Rscript {params.script} \
+        Rscript scripts/run_susie_customized.R \
             --expression_matrix {input.expr} \
             --phenotype_meta {input.pheno_meta} \
             --sample_meta {input.sample_meta} \
@@ -1208,7 +1195,6 @@ rule make_effect_size_scatter_eur_amr:
         time_min=120,
         num_cores=4,
     params:
-        script="scripts/nominal_effect_size_scatter_plot.R",
         pop12_group="EUR, AMR",
         pop1_group="EUR only",
         pop2_group="AMR only",
@@ -1217,7 +1203,7 @@ rule make_effect_size_scatter_eur_amr:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/nominal_effect_size_scatter_plot.R \
             --pop1 {input.pop1} \
             --pop2 {input.pop2} \
             --out {output[0]} \
@@ -1238,7 +1224,6 @@ rule make_effect_size_scatter_eur_afr:
         time_min=120,
         num_cores=4,
     params:
-        script="scripts/nominal_effect_size_scatter_plot.R",
         pop12_group="EUR, AFR",
         pop1_group="EUR only",
         pop2_group="AFR only",
@@ -1247,7 +1232,7 @@ rule make_effect_size_scatter_eur_afr:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/nominal_effect_size_scatter_plot.R \
             --pop1 {input.pop1} \
             --pop2 {input.pop2} \
             --out {output[0]} \
@@ -1268,7 +1253,6 @@ rule make_effect_size_scatter_afr_amr:
         time_min=120,
         num_cores=4,
     params:
-        script="scripts/nominal_effect_size_scatter_plot.R",
         pop12_group="AFR, AMR",
         pop1_group="AFR only",
         pop2_group="AMR only",
@@ -1277,7 +1261,7 @@ rule make_effect_size_scatter_afr_amr:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/nominal_effect_size_scatter_plot.R \
             --pop1 {input.pop1} \
             --pop2 {input.pop2} \
             --out {output[0]} \
@@ -1298,7 +1282,6 @@ rule scatter_eur_afr:
         time_min=120,
         num_cores=4,
     params:
-        script="scripts/scatter_plot.R",
         pop1_group="EUR",
         pop2_group="AFR",
     shell:
@@ -1306,7 +1289,7 @@ rule scatter_eur_afr:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/scatter_plot.R \
             --pop1 {input.pop1} \
             --pop2 {input.pop2} \
             --out {output[0]} \
@@ -1326,7 +1309,6 @@ rule scatter_eur_amr:
         time_min=120,
         num_cores=4,
     params:
-        script="scripts/scatter_plot.R",
         pop1_group="EUR",
         pop2_group="AMR",
     shell:
@@ -1334,7 +1316,7 @@ rule scatter_eur_amr:
         . /u/local/Modules/default/init/modules.sh
         module load R/3.6.0
 
-        Rscript {params.script} \
+        Rscript scripts/scatter_plot.R \
             --pop1 {input.pop1} \
             --pop2 {input.pop2} \
             --out {output[0]} \
@@ -1643,15 +1625,13 @@ rule make_eur_coord:
     resources:
         mem_gb=4,
         time_min=120,
-    params:
-        script="/u/project/gandalm/cindywen/isoform_twas/sLDSC/code/scripts/variant_coord.R",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load bcftools/1.9
         module load R/3.6.0
         bcftools query -f '%CHROM %POS %ID\n' {input.vcf} -o {output.info}
-        Rscript {params.script} \
+        Rscript /u/project/gandalm/cindywen/isoform_twas/sLDSC/code/scripts/variant_coord.R \
             --info {output.info} \
             --out {output.coord}
         """
@@ -1788,13 +1768,12 @@ rule make_susie_meta_trimester:
         mem_gb=4,
         time_min=60,
     params:
-        script="scripts/make_susie_meta.R",
         qtl_group="tri{tri}_ciseqtl_{num_hcp}hcp_perm",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/4.1.0-BIO
-        Rscript {params.script} \
+        Rscript scripts/make_susie_meta.R \
             --bed {input[0]} \
             --qtl_group {params.qtl_group} \
             --exclude_rel {input[1]}
@@ -1811,13 +1790,12 @@ rule make_susie_expr_trimester:
         mem_gb=4,
         time_min=60,
     params:
-        script="scripts/make_susie_expr.R",
         outname="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/tri{tri}.susie.tsv",
     shell:
         """
         . /u/local/Modules/default/init/modules.sh
         module load R/4.1.0-BIO
-        Rscript {params.script} \
+        Rscript scripts/make_susie_expr.R \
             --input {input[0]} \
             --outname {params.outname} \
             --exclude_rel {input[1]}
@@ -1845,7 +1823,6 @@ rule run_susie_trimester:
         mem_gb=4,
         time_min=120,
     params:
-        script="scripts/run_susie_customized.R",
         cisdistance=1000000,
         permuted="true",
         qtl_group="tri{tri}_ciseqtl_{num_hcp}hcp_perm",
@@ -1857,7 +1834,7 @@ rule run_susie_trimester:
         module load R/4.1.0-BIO
         mkdir -p {params.out_dir}
 
-        Rscript {params.script} \
+        Rscript scripts/run_susie_customized.R \
             --expression_matrix {input.expr} \
             --phenotype_meta {input.pheno_meta} \
             --sample_meta {input.sample_meta} \
@@ -1924,7 +1901,58 @@ rule sort_susie_trimester:
         (head -n 1 {params.prefix}_susie_merged.txt && tail -n +2 {params.prefix}_susie_merged.txt | sort -k3 -k4n ) | bgzip > {params.prefix}_purity_filtered.txt.gz
         """
 
+rule tri_conditional:
+    input:
+        expr="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/qtltools.gene.counts.scaled.normalized.trimester{tri}.bed.gz",
+        geno="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/eur/filtered.hg19.sorted.removeGeneOutlier.trimester{tri}.vcf.gz",
+        cov="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/data/eur/chuanjiao/tri{tri}_{hcp}HCP.txt",
+        threshold="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/eur_trimester/tri{tri}_permutations_all_threshold.txt",
+        rel_file="/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/related.txt",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri{tri}_conditional_{hcp}hcp/chunk{chunk}.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri{tri}_conditional_{hcp}hcp/chunk{chunk}.txt.done",
+    resources:
+        mem_gb=6,
+        time_min=480,
+        num_cores=6,
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri{tri}_conditional_{hcp}hcp/",
+    shell:
+        """
+        mkdir -p {params.outdir}
+        {config[QTLTOOLS]} cis \
+            --vcf {input.geno} \
+            --bed {input.expr} \
+            --cov {input.cov} \
+            --mapping {input.threshold} \
+            --chunk {wildcards.chunk} 300 \
+            --out {output[0]} \
+            --exclude-samples {input.rel_file} \
+            --seed 123 \
+            --window 1000000 \
+            --normal
+        touch {output[1]}
+        """
 
+rule tri_get_top_variants:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri{{tri}}_conditional_{{hcp}}hcp/chunk{chunk}.txt.done",
+            chunk=np.arange(1, 301, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri{tri}_conditional_{hcp}hcp/conditional_full.txt",
+        "/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri{tri}_conditional_{hcp}hcp/conditional_top_variants.txt",
+    resources:
+        mem_gb=6,
+        time_min=120,
+    params:
+        outdir="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/tri{tri}_conditional_{hcp}hcp/",
+    shell:
+        """
+        cat {params.outdir}chunk*.txt > {params.outdir}conditional_full.txt
+        cat {params.outdir}conditional_full.txt | awk '{{ if ($19 == 1) print $0}}' > {params.outdir}conditional_top_variants.txt
+        """
 ################################### sex-specific ###################################
 rule sex_cov:
     input:

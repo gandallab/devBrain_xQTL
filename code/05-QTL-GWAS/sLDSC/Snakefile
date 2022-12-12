@@ -127,11 +127,18 @@ rule all:
             tri_hcp=[f"{tri}_{hcp}" for tri, hcp in zip([1, 2], [15, 10])],
         ),
         expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{GWAS_trait}_tri{tri_hcp}hcp_isoqtl_maxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+            GWAS_trait=list(GWAS_DIC.keys()),
+            tri_hcp=[f"{tri}_{hcp}" for tri, hcp in zip([1, 2], [35, 20])],
+        ),
+        expand(
             "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{GWAS_trait}_{sex}_50hcp_eqtl_maxCPP.{file}",
             sex=["m", "f"],
             file=["cov", "delete", "log", "part_delete", "results"],
             GWAS_trait=list(GWAS_DIC.keys()),
         ),
+        
 
 
 # also made variant info files for ancestries
@@ -1302,7 +1309,7 @@ rule partition_h2_e_isoqtl_maxCPP:
         """
 
 
-################### trimester-specific e/sQTL maxCPP ###################
+################### trimester-specific e/iso/sQTL maxCPP ###################
 rule make_annot_tri_maxCPP:
     input:
         susie="/u/project/gandalm/cindywen/isoform_twas/eqtl_new/results/susie_finemap/tri/tri{tri}_ciseqtl_{num_hcp}hcp_perm_purity_filtered.txt.gz",
@@ -1482,7 +1489,92 @@ rule partition_h2_tri_s_maxCPP:
         set -eu
         """
 
+rule make_annot_tri_iso_maxCPP:
+    input:
+        susie="/u/project/gandalm/cindywen/isoform_twas/isoqtl_new/results/susie_finemap/tri{tri}_cisisoqtl_{num_hcp}hcp_perm_purity_filtered.txt.gz",
+        bim="/u/project/gandalm/shared/apps/ldsc/LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{chr_num}.bim",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/tri{tri}_{num_hcp}hcp_isoqtl_maxCPP.{chr_num}.annot.gz",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/tri{tri}_{num_hcp}hcp_isoqtl_maxCPP.{chr_num}.annot",
+    shell:
+        """
+        . /u/local/Modules/default/init/modules.sh
+        module load R/4.1.0-BIO
+        Rscript scripts/make_annot_maxcpp.R \
+            --susie {input.susie} \
+            --bim {input.bim} \
+            --annot {params.out}
+        gzip {params.out}
+        """
 
+rule ldsc_tri_iso_maxCPP:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/tri{tri}_{num_hcp}hcp_isoqtl_maxCPP.{chr_num}.annot.gz",
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/tri{{tri}}_{{num_hcp}}hcp_isoqtl_maxCPP.{{chr_num}}.{file}",
+            file=["l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="tri{tri}_{num_hcp}hcp_isoqtl_maxCPP",
+    shell:
+        """
+        set +eu 
+        source ~/anaconda3/bin/activate ldsc
+        {config[LDSC_PATH]}ldsc.py \
+            --l2 \
+            --bfile {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_plink/1000G.EUR.QC.{wildcards.chr_num} \
+            --print-snps {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/print_snps.txt \
+            --ld-wind-cm 1 \
+            --annot {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}.annot.gz \
+            --out {params.annot_dir}{params.annot_prefix}.{wildcards.chr_num}
+        set -eu
+        """
+
+rule partition_h2_tri_iso_maxCPP:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/tri{{tri}}_{{num_hcp}}hcp_isoqtl_maxCPP.{chr_num}.{file}",
+            file=["l2.ldscore.gz", "l2.M", "l2.M_5_50", "log"],
+            chr_num=np.arange(1, 23, 1),
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/{{GWAS_trait}}_tri{{tri}}_{{num_hcp}}hcp_isoqtl_maxCPP.{file}",
+            file=["cov", "delete", "log", "part_delete", "results"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        out_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/results/",
+        annot_dir="/u/project/gandalm/cindywen/isoform_twas/sLDSC/annot/",
+        annot_prefix="tri{tri}_{num_hcp}hcp_isoqtl_maxCPP",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """
+        set +eu
+        source ~/anaconda3/bin/activate ldsc
+        {config[LDSC_PATH]}ldsc.py \
+            --h2 {params.GWAS_file}.sumstats.gz \
+            --ref-ld-chr {config[LDSC_PATH]}LDSCORE/1000G_EUR_Phase3_baseline/baseline.,{params.annot_dir}{params.annot_prefix}. \
+            --frqfile-chr {config[LDSC_PATH]}LDSCORE/1000G_Phase3_frq/1000G.EUR.QC. \
+            --w-ld-chr {config[LDSC_PATH]}LDSCORE/weights_hm3_no_hla/weights. \
+            --overlap-annot \
+            --print-cov \
+            --print-coefficients \
+            --print-delete-vals \
+            --out {params.out_dir}{wildcards.GWAS_trait}_{params.annot_prefix}
+        set -eu
+        """
 ################### sex-specific eQTL maxCPP ###################
 rule make_annot_sex_maxCPP:
     input:

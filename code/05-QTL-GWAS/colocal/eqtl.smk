@@ -251,7 +251,7 @@ rule run_ecaviar:
 
 # here parallel with loci, not genes; loci with many genes take too long to finish; separately ran some loci with genes in parallel
 # while read locus gene;do qsub run_ecaviar.sh $locus $gene ;done < run_ecaviar.txt
-
+# see mod_ieqtl.smk where parallels by locus-gene pairs
 
 rule analyze_ecaviar:
     input:

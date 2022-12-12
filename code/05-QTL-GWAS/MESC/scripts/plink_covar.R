@@ -15,4 +15,6 @@ new <- cbind(data.frame(rownames(new)), data.frame(rownames(new)), new)
 colnames(new)[1:2] <- c("FID", "IID")
 # 8/30/22: it seems this is not supported by R/4.1.0; for features other than gene, iso, intron, manually generated MESC covar files
 new$sex <- as.numeric(new$sex) # F=1, M=2
+# > new$sex <- gsub("F", 1, new$sex)
+# > new$sex <- gsub("M", 2, new$sex)
 write.table(new, args$out, row.names = F, col.names = T, quote = F, sep = "\t")
