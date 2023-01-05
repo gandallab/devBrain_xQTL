@@ -13,7 +13,7 @@
     - Note: except for Walker data, we applied R2>.3 filter during imputation; so here we only applied R2>.3 on Walker imputed data and intersected with the other datasets
 - `ancestry.ipynb`: infer data ancestry, make plots
 - `IBD.ipynb`: relatedness check
-- `Snakefile`:
+- `Snakefile`
 ## 3: RNA-seq
 -   Pre-alignment QC [FastQC v0.11.9](https://github.com/s-andrews/FastQC)
 -   Alignment [STAR-2.7.3a](https://github.com/alexdobin/STAR), index with [GENCODE v29lift37](https://www.gencodegenes.org/) genome and annotation
@@ -75,7 +75,7 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 - `Snakefile`
 ### 4-5: APEX
 - `apex_analysis.ipynb`
-- `Snakefile`:
+- `Snakefile`
 ## 5: Integrative analysis
 ### 5-1: sLDSC 
 - `ldsc_analysis.ipynb`
@@ -102,3 +102,5 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 - `mod_ieqtl.smk`
 - `sex_tri.smk`
 - `sqtl.smk`
+- sashimi plot related code
+## 6:
