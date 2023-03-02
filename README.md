@@ -103,4 +103,5 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 - `sex_tri.smk`
 - `sqtl.smk`
 - sashimi plot related code
-## 6:
+## 6: Analysis
+- Biotype and cell type analysis for fetal-only eGenes, and trimester-specific eGenes/sGenes 
