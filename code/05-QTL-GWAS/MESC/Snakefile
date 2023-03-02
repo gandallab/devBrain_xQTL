@@ -21,6 +21,7 @@ Gene set analysis (using individual level expression and genotype)
 Overall gene expression analysis
     - score_all_gene: estimate overall gene expression score
     - h2med_all_gene: estimate h2med
+    - stratify to LDSC baseline annotations
 Overall isoform expression
     - plink_covar_iso
     - expr_rel_iso
@@ -38,7 +39,7 @@ Sex specific
 """
 
 GWAS_DIC = {s["trait"]: s["file"] for s in config["GWAS_LIST"]}
-
+# ruleorder: h2med_all_gene > h2med_all_gene_ldsc_baseline
 
 rule all:
     input:
@@ -52,6 +53,10 @@ rule all:
         # ),
         expand(
             "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{GWAS_trait}.all.h2med",
+            GWAS_trait=list(GWAS_DIC.keys()),
+        ),
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/LDSCbaseline.all.gene.{GWAS_trait}.all.h2med",
             GWAS_trait=list(GWAS_DIC.keys()),
         ),
         expand(
@@ -361,6 +366,34 @@ rule h2med_all_gene:
         set -eu
         """
 
+rule h2med_all_gene_ldsc_baseline:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene.{chr}.{file}",
+            file=["G", "ave_h2cis", "gannot.gz", "expscore.gz", "hsq", "lasso"],
+            chr=np.arange(1, 23, 1),
+        ),
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/LDSCbaseline.all.gene.{GWAS_trait}.all.h2med",
+        "/u/project/gandalm/cindywen/isoform_twas/MESC/out/LDSCbaseline.all.gene.{GWAS_trait}.categories.h2med",
+    resources:
+        mem_gb=4,
+        time_min=120,
+    params:
+        expscore="/u/project/gandalm/cindywen/isoform_twas/MESC/out/all.gene",
+        out="/u/project/gandalm/cindywen/isoform_twas/MESC/out/LDSCbaseline.all.gene.{GWAS_trait}",
+        GWAS_file=lambda wildcards: GWAS_DIC[wildcards.GWAS_trait],
+    shell:
+        """ 
+        set +eu
+        source ~/anaconda3/bin/activate ldsc
+        {config[MESC]}run_mesc.py \
+            --h2med {params.GWAS_file}.sumstats.gz \
+            --exp-chr {params.expscore} \
+            --out {params.out} \
+            --ref-ld-chr /u/project/gandalm/shared/apps/mesc/data/baselineLD_v2.0_pruned/baselineLD
+        set -eu
+        """
 
 ############### overall isoform expression analysis ###############
 rule plink_covar_iso:
