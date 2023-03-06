@@ -103,5 +103,10 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 - `sex_tri.smk`
 - `sqtl.smk`
 - sashimi plot related code
-## 6: Analysis
-- Biotype and cell type analysis for fetal-only eGenes, and trimester-specific eGenes/sGenes 
+## 6: Further Analyses
+### 6-1: eGene/sGene Enrichment
+- `fetal_only_egenes.ipynb`: biotype and cell type analysis for fetal-specific eGenes
+- `trimester_egenes_sgenes.ipynb`: biotype and cell type analysis for trimester-specific e/sGenes
+### 6-2: Module Dashboards
+- `dashboard_generator.ipynb`
+- `dashboards`: folder containing dashboards for each module
