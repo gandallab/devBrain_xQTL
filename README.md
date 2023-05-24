@@ -1,5 +1,5 @@
 # Fetal brain mega QTL
-**Supplemental tables and all QTL summary statistics are available at https://doi.org/10.7303/syn50897018.5**
+**Supplemental tables, all QTL summary statistics, and other extended data are available at https://doi.org/10.7303/syn50897018.5**
 ## 1: Munging data
 ## 2: Genotype
 ### 2-1: Pre-imputation
