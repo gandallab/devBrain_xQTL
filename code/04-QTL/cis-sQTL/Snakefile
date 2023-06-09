@@ -85,6 +85,10 @@ sex-specific
 rule all:
     input:
         # "/u/project/gandalm/cindywen/isoform_twas/star/gencodev33_STARindex/SAindex",
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/{num_hcp}hcp_cov.txt",
+            num_hcp=np.arange(5, 30, 5)
+        ),
         # expand(
         #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_{num_hcp}hcp_{window}/{file}",
         #     num_hcp=np.arange(5, 51, 5),
@@ -150,7 +154,7 @@ rule all:
         #     num_hcp=12,
         #     window=WINDOWS,
         # ),
-        "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/all.introns.RData",
+        # "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/leafviz_annot/all.introns.RData",
         # expand(
         #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_grp_perm_{num_hcp}hcp_{window}/group.perm.txt.gz",
         #     num_hcp=40,
@@ -161,29 +165,29 @@ rule all:
         #     num_hcp=40,
         #     window="1e6",
         # ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/{file}",
-            file=["conditional_full.txt", "conditional_top_variants.txt"],
-        ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_conditional_40hcp_1e6/{file}",
+        #     file=["conditional_full.txt", "conditional_top_variants.txt"],
+        # ),
         # "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/susie_finemap/mixed_cissqtl_40hcp_perm_purity_filtered.txt.gz",
         # "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_40hcp_1e6/torus.out",
         # "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/mixed_nominal_40hcp_1e6/qvalue_pi0_prep/qvalue.done",
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/tri_specific/tri{tri}_{num_hcp}HCP_cov.txt",
-            tri=[1, 2],
-            num_hcp=np.arange(5, 51, 5),
-        ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/sex_specific/{sex}_{num_hcp}HCP_cov.txt",
-            sex=["m", "f"],
-            num_hcp=np.arange(5, 51, 5),
-        ),
-        expand(
-            "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/susie_finemap/tri{tri}_cissqtl_{num_hcp}hcp_perm_purity_filtered.txt.gz",
-            zip,
-            tri=[1, 2],
-            num_hcp=[15, 10],
-        ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/eur/tri_specific/tri{tri}_{num_hcp}HCP_cov.txt",
+        #     tri=[1, 2],
+        #     num_hcp=np.arange(5, 51, 5),
+        # ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/data/sex_specific/{sex}_{num_hcp}HCP_cov.txt",
+        #     sex=["m", "f"],
+        #     num_hcp=np.arange(5, 51, 5),
+        # ),
+        # expand(
+        #     "/u/project/gandalm/cindywen/isoform_twas/sqtl_new/results/susie_finemap/tri{tri}_cissqtl_{num_hcp}hcp_perm_purity_filtered.txt.gz",
+        #     zip,
+        #     tri=[1, 2],
+        #     num_hcp=[15, 10],
+        # ),
 
 
 rule index:
