@@ -6,8 +6,8 @@
 - `eqtl_analysis.ipynb`: identify optimal #HCP in covariates, gene expression PCA, dTSS, etc.
 - `fetal_adult.ipynb`
 - `func_enrich.ipynb`: functional enrichment analysis of QTL
-- `locuszoom.ipynb`
 - `metadata.ipynb`: plot data age, sex, infer NA sex, etc.
+- `module_eigengene.ipynb`
 - `paintor.ipynb`: PAINTOR multi-ethnic fine-mapping 
 - `pLI.ipynb`
 - `sex_specific.ipynb`
