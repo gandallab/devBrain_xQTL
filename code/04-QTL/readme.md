@@ -12,6 +12,7 @@
 - `pLI.ipynb`
 - `sex_specific.ipynb`
 - `susie.ipynb`: susie finemapping results
+- `tri_egene_biotype.ipynb`
 - `tri_h2_supp.ipynb`
 - `tri_specific.ipynb`
 - `walker_fetal.ipynb`
