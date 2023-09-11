@@ -1,6 +1,6 @@
 [![DOI](https://zenodo.org/badge/268661500.svg)](https://zenodo.org/badge/latestdoi/268661500)
 
-# Fetal brain mega QTL
+# Develping brain mega xQTL
 **Supplemental tables, all QTL summary statistics, and other extended data are available at https://doi.org/10.7303/syn50897018.5**
 ## 1: Munging data
 ## 2: Genotype
