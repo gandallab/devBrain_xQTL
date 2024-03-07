@@ -1,0 +1,4 @@
+- First make a table for all top/lead/primary variants from conditional QTL mapping (V19==1)
+- I also filtered for V20==1 (meaning the backward P-value is below the threshold of this phenotype)
+- 1Mb around the SNPs
+- if START<0, START=0

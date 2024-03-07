@@ -1,0 +1,221 @@
+from os.path import join
+import os
+import numpy as np
+import pandas as pd
+import sys
+
+
+def get_locus_chr(wildcards):
+    LOCI_TABLE = pd.read_table("conditional_top_variants_table.txt").set_index(
+        "ID", drop=True
+    )
+    chromosome = LOCI_TABLE.loc[wildcards.variant, "CHR"]
+    return chromosome
+
+
+def get_locus_start(wildcards):
+    LOCI_TABLE = pd.read_table("conditional_top_variants_table.txt").set_index(
+        "ID", drop=True
+    )
+    start = LOCI_TABLE.loc[wildcards.variant, "start"]
+    return start
+
+
+def get_locus_end(wildcards):
+    LOCI_TABLE = pd.read_table("conditional_top_variants_table.txt").set_index(
+        "ID", drop=True
+    )
+    end = LOCI_TABLE.loc[wildcards.variant, "end"]
+    return end
+
+
+LOCI_TABLE = pd.read_table("conditional_top_variants_table.txt").set_index(
+    "ID", drop=False
+)
+# ruleorder: extract_locus > write_bgen
+
+
+rule all:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.ld.gz",
+            variant=LOCI_TABLE.ID.values,
+        ),
+
+
+rule extract_locus:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier.{file}",
+            file=["bed", "bim", "fam", "log"],
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{{variant}}.{file}",
+            file=["bed", "bim", "fam", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    params:
+        chromosome=get_locus_chr,
+        start=get_locus_start,
+        end=get_locus_end,
+    # wildcard_constraints:
+    #     variant="^+[^.temp]+$",
+    shell:
+        """
+        /u/project/gandalm/shared/apps/plink2/v2.00a2-final/plink2 \
+            --bfile /u/project/gandalm/cindywen/isoform_twas/genotype/all_data/isec_R2_greater_than_3/ancestry/filtered.hg19.sorted.removeGeneOutlier \
+            --chr {params.chromosome} \
+            --from-bp {params.start} \
+            --to-bp {params.end} \
+            --make-bed \
+            --out /u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{wildcards.variant}
+        """
+
+
+rule write_zfile:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.bim",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.z",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    shell:
+        """
+        printf 'rsid chromosome position allele1 allele2\n' > {output[0]}
+        awk '{{print $2" "$1" "$4" "$5" "$6}}' {input[0]} >> {output[0]}
+        """
+
+
+rule write_bgen:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{{variant}}.{file}",
+            file=["bed", "bim", "fam", "log"],
+        ),
+    output:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{{variant}}.temp.{file}",
+            file=["bgen", "sample", "log"],
+        ),
+    resources:
+        mem_gb=4,
+        time_min=60,
+    # wildcard_constraints:
+    #     variant="^+[^.temp]+$",
+    shell:
+        """
+        /u/project/gandalm/shared/apps/plink2/v2.00a2-final/plink2 \
+            --bfile /u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{wildcards.variant} \
+            --export bgen-1.2 \
+            --out /u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{wildcards.variant}.temp
+        """
+
+
+rule index_bgen:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.temp.bgen",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.temp.bgen.bgi",
+    resources:
+        mem_gb=4,
+        time_min=60,
+    shell:
+        """
+        module load gcc/10.2.0
+        /u/project/gandalm/shared/apps/BGEN/bgen_v1.1.4-CentOS6.8-x86_64/bgenix -index -g {input[0]}
+        """
+
+
+rule write_master:
+    input:
+        expand(
+            "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{{variant}}.temp.{file}",
+            file=["bgen", "bgen.bgi"],
+        ),
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.z",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.master",
+    resources:
+        mem_gb=1,
+        time_min=5,
+    shell:
+        """
+        printf 'z;bgen;bgi;bcor;ld;n_samples\n' > {output[0]}
+        printf "filtered.hg19.sorted.removeGeneOutlier.%s.z;filtered.hg19.sorted.removeGeneOutlier.%s.temp.bgen;filtered.hg19.sorted.removeGeneOutlier.%s.temp.bgen.bgi;filtered.hg19.sorted.removeGeneOutlier.%s.temp.bcor;filtered.hg19.sorted.removeGeneOutlier.%s.ld;629" {wildcards.variant} {wildcards.variant} {wildcards.variant} {wildcards.variant} {wildcards.variant} >> {output[0]}
+        """
+
+
+rule snp_corr:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.master",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.temp.bcor",
+    resources:
+        mem_gb=4,
+        time_min=60,
+        num_cores=2,
+    shell:
+        """
+        /u/project/gandalm/shared/apps/ldstore_v2.0_x86_64/ldstore_v2.0_x86_64 \
+            --in-files {input[0]} \
+            --write-bcor \
+            --read-only-bgen \
+            --n-threads {resources.num_cores} \
+            --compression high
+        """
+
+
+rule ld:
+    input:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.master",
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.temp.bcor",
+    output:
+        "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.ld.gz",
+    resources:
+        mem_gb=4,
+        time_min=60,
+        num_cores=2,
+    shell:
+        """
+        /u/project/gandalm/shared/apps/ldstore_v2.0_x86_64/ldstore_v2.0_x86_64 \
+            --in-files {input[0]} \
+            --bcor-to-text
+        gzip /u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{wildcards.variant}.ld
+        """
+
+
+# rule cleanup:
+#     input:
+#         expand(
+#             "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{{variant}}.{file}",
+#             file=[
+#                 "bed",
+#                 "bim",
+#                 "fam",
+#                 "log",
+#                 "temp.bgen",
+#                 "temp.sample",
+#                 "temp.log",
+#                 "z",
+#                 "temp.bgen.bgi",
+#                 "master",
+#                 "temp.bcor",
+#                 "ld",
+#             ],
+#         ),
+#     output:
+#         "/u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{variant}.ld.gz",
+#     resources:
+#         mem_gb=4,
+#         time_min=60,
+#     shell:
+#         """
+#         gzip /u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{wildcards.variant}.ld
+#         for i in bed fam log temp.bgen temp.sample temp.log z temp.bgen.bgi master temp.bcor
+#         do rm /u/project/gandalm/cindywen/isoform_twas/genotype/ldstore/filtered.hg19.sorted.removeGeneOutlier.{wildcards.variant}.${{i}}
+#         done
+#         """
