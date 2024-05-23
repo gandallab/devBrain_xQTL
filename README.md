@@ -1,7 +1,7 @@
 [![DOI](https://zenodo.org/badge/268661500.svg)](https://zenodo.org/badge/latestdoi/268661500)
 
 # Developing brain mega xQTL
-**Supplemental tables, all QTL summary statistics, and other extended data are available at https://doi.org/10.7303/syn50897018.5**
+**All QTL summary statistics, and other extended data are available at https://doi.org/10.7303/syn50897018.5**
 ## 1: Munging data
 ## 2: Genotype
 ### 2-1: Pre-imputation
@@ -80,6 +80,7 @@ write.table(txi.tx$abundance,file="tx.TPM.tsv",quote=FALSE, sep='\t')
 - `apex_analysis.ipynb`
 - `Snakefile`
 ## 5: Integrative analysis
+**See `coloc_ecaviar_May_2024/` for colocalization analysis**
 ### 5-1: sLDSC 
 - `ldsc_analysis.ipynb`
 - `Snakefile`

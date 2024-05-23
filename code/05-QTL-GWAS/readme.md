@@ -1,4 +1,5 @@
 # QTL-GWAS
+**See `coloc_ecaviar_May_2024/` for colocalization analysis**
 ## 5-1: sLDSC 
 - `ldsc_analysis.ipynb`
 - `Snakefile`
