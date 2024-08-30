@@ -3,7 +3,7 @@
 # Developing brain mega xQTL
 **Data sharing**
 - Final supplemental tables available with the paper.
-- GitHub releases: TWAS/PrediXcan weights, SuSiE fine-mapping results. 
+- GitHub releases: [TWAS/PrediXcan weights](https://github.com/gandallab/devBrain_xQTL/releases/tag/%23TWAS_weights), SuSiE fine-mapping results. 
 - Galaxy: https://usegalaxy.org/u/cindywen/h/devbrainsumstats. Cross-ancestry e/iso/sQTL nominal and permutation summary statistics, effect alleles, MAFs.
 - Synapse: https://doi.org/10.7303/syn50897018.5. QTL summary statistics. Requires sign-in.
 - Gandal lab internal: Google doc with paths to fils on Hoffman2.
